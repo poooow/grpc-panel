@@ -1,5 +1,5 @@
 // Define specialized types if needed, for now unknown is safer than any, or explicit Record
-type ProtoValue = string | number | Record<string, unknown> | ProtoValue[];
+type ProtoValue = string | number | bigint | Record<string, unknown> | ProtoValue[];
 
 export class ProtoDecoder {
     private buffer: Uint8Array;
@@ -20,7 +20,8 @@ export class ProtoDecoder {
         while (this.offset < end) {
             if (this.offset >= this.buffer.length) break;
 
-            const tag = this.readVarint();
+            const tagBig = this.readVarint();
+            const tag = Number(tagBig);
             const fieldNumber = tag >>> 3;
             const wireType = tag & 7;
 
@@ -35,7 +36,8 @@ export class ProtoDecoder {
                     value = this.readFixed64();
                     break;
                 case 2: { // Length-delimited
-                    const length = this.readVarint();
+                    const lengthBig = this.readVarint();
+                    const length = Number(lengthBig);
                     const data = this.readBytes(length);
                     value = this.decodeLengthDelimited(data);
                     break;
@@ -44,9 +46,7 @@ export class ProtoDecoder {
                     value = this.readFixed32();
                     break;
                 default:
-                    // Unknown wire type, usually implies parsing error or end of stream in a bad way
-                    // We can't safely shift, so we might just stop or return what we have?
-                    // For now, let's treat it as a failure of this message parse if possible
+                    // Unknown wire type, usually implies parsing error or end of stream
                     console.warn(`Unknown wire type ${wireType} at offset ${this.offset}`);
                     return result;
             }
@@ -108,27 +108,28 @@ export class ProtoDecoder {
         return this.uint8ArrayToBase64(data);
     }
 
-    private readVarint(): number {
-        let result = 0;
-        let shift = 0;
+    private readVarint(): bigint {
+        let result = BigInt(0);
+        let shift = BigInt(0);
         let scanning = true;
         while (scanning) {
             if (this.offset >= this.buffer.length) throw new Error("Unexpected EOF in varint");
             const b = this.buffer[this.offset++];
-            result |= (b & 0x7f) << shift;
+            result |= (BigInt(b) & BigInt(0x7f)) << shift;
             if ((b & 0x80) === 0) {
                 scanning = false;
             } else {
-                shift += 7;
-                if (shift > 32) {
-                    // Javascript bitwise ops are 32-bit. This is a naive implementation 
-                    // that might break for large 64-bit varints.
-                    // For now, capping or potential overflow is accepted risk for "raw viewer".
-                    scanning = false;
-                }
+                shift += BigInt(7);
+                // 64-bit max shift is roughly 63 bits. 
+                // 10 bytes max for varint64.
+                // We could add a check here if shift > 63, but BigInt handles arbitrary size.
+                // Protobuf spec says varints are max 10 bytes.
             }
         }
-        return result >>> 0; // Ensure unsigned
+        // BigInt implies signed in JS unrelated to 'unsigned' bitwise ops in number
+        // but protobuf varints on wire are unsigned 64-bit unless zig-zag.
+        // We return the raw bits as BigInt.
+        return result;
     }
 
     private readFixed64(): string {
