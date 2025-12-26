@@ -44,6 +44,11 @@ export function trafficList(request: Traffic) {
     badge(trafficListItem, request, 'status');
 
     trafficList?.prepend(trafficListItem);
+
+    // Limit DOM items (Max 1000)
+    if (trafficList && trafficList.children.length > 1000) {
+        trafficList.lastElementChild?.remove();
+    }
 }
 
 export function clearTrafficList() {

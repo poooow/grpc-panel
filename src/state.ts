@@ -28,6 +28,10 @@ export class Store {
     }
 
     addTraffic(request: Traffic) {
+        // Limit to 1000 items so we don't cause UI to become unresponsive
+        if (this.traffic.length >= 1000) {
+            this.traffic.shift();
+        }
         this.traffic.push(request);
         this.notify();
     }
