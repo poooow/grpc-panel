@@ -1,0 +1,37 @@
+.badge {
+    font-size: 8px;
+    padding: 2px 4px;
+    margin-right: 1px;
+    border: 0.5px solid;
+    border-radius: 12px;
+}
+
+.badge-grpc {
+    @extend .badge;
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+}
+
+.badge-encoding-other {
+    @extend .badge;
+    border-color: var(--color-gray-700);
+    color: var(--color-gray-700);
+}
+
+.badge-status-info {
+    @extend .badge;
+    border-color: var(--color-gray-700);
+    color: var(--color-gray-700);
+}
+
+.badge-status-error {
+    @extend .badge;
+    border-color: var(--color-error);
+    color: var(--color-error);
+}
+
+.badge-method {
+    @extend .badge;
+    border-color: var(--color-gray-700);
+    color: var(--color-gray-700);
+}

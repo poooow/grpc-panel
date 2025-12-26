@@ -1,0 +1,17 @@
+:root {
+    --color-gray-100: #1a1a1a;
+    --color-gray-200: #1e1e1e; // Main background
+    --color-gray-300: #252526; // Row hover/alternate background
+    --color-gray-400: #2d2d30; // Header background
+    --color-gray-500: #3e3e42; // Column dividers and borders
+    --color-gray-600: #666666;
+    --color-gray-700: #969696;
+    --color-gray-800: #cccccc; // Primary text (Method, Domain, File columns)
+    --color-accent: #bf99e9;
+    --color-accent-dimmed: #383657;
+    --color-accent-hover: #6c4ffc4b;
+    --color-success: #4caf50;
+    --color-warning: #ff9800;
+    --color-error: #f44336;
+    --color-bg: var(--sys-color-base, var(--color-gray-200)); // Try to get Chrome theme values
+}

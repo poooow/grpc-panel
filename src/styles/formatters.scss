@@ -1,0 +1,45 @@
+// Syntax highlighting styles for JSON formatters
+
+.json-key {
+    color: #9cdcfe; // Light Blue
+}
+
+.json-string {
+    color: #ce9178; // Orange/Brown
+}
+
+.json-number {
+    color: #b5cea8; // Light Green
+}
+
+.json-boolean {
+    color: #569cd6; // Blue
+}
+
+.json-null {
+    color: #808080; // Gray
+}
+
+// Form Data Styles
+.form-data {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+
+    .form-row {
+        display: flex;
+        gap: 4px;
+        align-items: flex-start; // In case value wraps
+        word-break: break-all;
+    }
+
+    .form-key {
+        color: #9cdcfe; // Light Blue (same as json-key)
+        white-space: nowrap;
+        flex-shrink: 1;
+    }
+
+    .form-value {
+        color: #ce9178; // Orange/Brown (same as json-string)
+    }
+}

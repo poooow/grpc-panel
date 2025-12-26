@@ -1,0 +1,102 @@
+#nav-header {
+    display: flex;
+    align-items: center;
+    background-color: var(--color-gray-400);
+    border-bottom: 1px solid var(--color-gray-500);
+    padding: 0 8px;
+    height: 36px;
+    gap: 8px;
+    flex-shrink: 0;
+
+    .nav-title {
+        font-weight: 600;
+        font-size: 13px;
+        color: var(--color-gray-800);
+    }
+
+    .nav-group {
+        display: flex;
+        border: 1px solid var(--color-gray-600);
+        border-radius: 4px;
+        overflow: hidden;
+
+        .nav-button {
+            border: none;
+            border-radius: 0;
+            background-color: transparent;
+
+            &.toggle-left {
+                border-right: 1px solid var(--color-gray-600);
+            }
+        }
+    }
+
+    .nav-button {
+        background: none;
+        border: 1px solid transparent;
+        color: var(--color-gray-800);
+        padding: 4px 8px;
+        cursor: pointer;
+        font-size: 11px;
+        outline: none;
+        border-radius: 3px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        &:hover {
+            background-color: var(--color-gray-300);
+        }
+
+        &.active {
+            background-color: var(--color-accent-dimmed);
+            color: #fff;
+        }
+
+        &.icon-button {
+            padding: 4px;
+            color: var(--color-gray-700);
+            border: 1px solid var(--color-gray-600);
+            border-radius: 4px;
+        }
+    }
+
+    .nav-checkbox-label {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        color: var(--color-gray-800);
+        font-size: 11px;
+        cursor: pointer;
+        user-select: none;
+
+        input {
+            margin: 0;
+            appearance: none;
+            -webkit-appearance: none;
+            width: 14px;
+            height: 14px;
+            border: 1px solid var(--color-gray-600);
+            border-radius: 3px;
+            background-color: transparent;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            &:checked {
+                background-color: transparent;
+
+                &::after {
+                    content: '';
+                    display: block;
+                    width: 10px;
+                    height: 10px;
+                    background-color: var(--color-gray-800);
+                    -webkit-mask: url('data:image/svg+xml;utf8,<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M20 6L9 17L4 12" stroke="black" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>') no-repeat center / contain;
+                    mask: url('data:image/svg+xml;utf8,<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M20 6L9 17L4 12" stroke="black" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>') no-repeat center / contain;
+                }
+            }
+        }
+    }
+}
