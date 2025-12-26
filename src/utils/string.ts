@@ -6,6 +6,7 @@ export const isBase64 = (str: string): boolean => {
     }
 };
 
+// Escaping only dangerous characters for HTML
 export const escapeHtml = (unsafe: string): string => {
     return unsafe
         .replace(/&/g, "&amp;")
