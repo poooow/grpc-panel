@@ -1,6 +1,6 @@
 {
     "manifest_version": 3,
-    "name": "gRPC Panel new",
+    "name": "gRPC Panel",
     "version": "0.1.0",
     "description": "DevTools panel to inspect gRPC-web traffic.",
     "permissions": [
