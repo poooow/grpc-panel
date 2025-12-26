@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "description": "Browser extension to display network traffic in DevTools",
   "scripts": {
-    "build": "webpack --mode production",
+    "build": "npm run build:chrome && npm run build:firefox",
+    "build:chrome": "webpack --mode production --env target=chrome",
+    "build:firefox": "webpack --mode production --env target=firefox",
     "dev": "webpack --mode development --watch",
     "lint": "eslint src --ext .ts"
   },
