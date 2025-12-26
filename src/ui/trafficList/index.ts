@@ -1,7 +1,7 @@
-import { badge } from "./badge";
-import { isGrpcRequest, isJsonRequest, isXmlRequest, isFormRequest } from "../utils/requestType";
-import { store, type Traffic } from "../state";
-import { detail } from "./detail";
+import { badge } from "../badge";
+import { isGrpcRequest, isJsonRequest, isXmlRequest, isFormRequest } from "../../utils/requestType";
+import { store, type Traffic } from "../../state";
+import { detail } from "../detail";
 
 export function trafficList(request: Traffic) {
     const uiState = store.getUiState();
