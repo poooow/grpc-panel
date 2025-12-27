@@ -1,4 +1,5 @@
 import { type Traffic } from "../../state";
+import { statusToString } from "../../utils/statusToString";
 
 export const renderOverview = (request: Traffic): HTMLElement => {
     const content = document.createElement('div');
@@ -8,7 +9,7 @@ export const renderOverview = (request: Traffic): HTMLElement => {
     content.appendChild(renderSummarySection('Summary', [
         { label: 'Request URL', value: request.request.url },
         { label: 'Request Method', value: request.request.method },
-        { label: 'Status Code', value: `${request.response.status} ${request.response.statusText}` },
+        { label: 'Status Code', value: `${request.response.status} ${statusToString[request.response.status]}` },
         { label: 'Remote Address', value: request.serverIPAddress || '-' },
         { label: 'Time', value: `${request.time.toFixed(2)} ms` }
     ]));
