@@ -11,10 +11,12 @@ const getHeader = (headers: Header[], name: string) =>
 const hasContentType = (request: chrome.devtools.network.Request, signatures: string[]) => {
     const reqContentType = getHeader(request.request.headers || [], 'content-type');
     const resContentType = getHeader(request.response.headers || [], 'content-type');
+    const resMimeType = request.response.content?.mimeType;
 
     return signatures.some(sig =>
         reqContentType.toLowerCase().includes(sig.toLowerCase()) ||
-        resContentType.toLowerCase().includes(sig.toLowerCase())
+        resContentType.toLowerCase().includes(sig.toLowerCase()) ||
+        resMimeType.toLowerCase().includes(sig.toLowerCase())
     );
 };
 
