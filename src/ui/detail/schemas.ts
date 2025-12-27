@@ -1,0 +1,171 @@
+import { store, type ProtoSchema } from '../../state';
+import { validateProtoSchema } from '../../utils/protoValidator';
+
+export const renderSchemas = (): HTMLElement => {
+    const container = document.createElement('div');
+    container.className = 'schemas-container';
+
+    const renderContent = (schemas: ProtoSchema[]) => {
+        container.innerHTML = '';
+
+        // Upload section
+        const uploadSection = createUploadSection();
+        container.appendChild(uploadSection);
+
+        // Schema list
+        const listSection = createSchemaList(schemas);
+        container.appendChild(listSection);
+    };
+
+    // Subscribe to schema updates
+    store.subscribeSchemas(renderContent);
+
+    return container;
+};
+
+const createUploadSection = (): HTMLElement => {
+    const section = document.createElement('div');
+    section.className = 'schema-upload-section';
+
+    const dropZone = document.createElement('div');
+    dropZone.className = 'schema-drop-zone';
+    dropZone.innerHTML = `
+        <span class="drop-icon">📄</span>
+        <span class="drop-text">Drop .proto files here or click to upload</span>
+    `;
+
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = '.proto';
+    fileInput.multiple = true;
+    fileInput.style.display = 'none';
+
+    const errorDisplay = document.createElement('div');
+    errorDisplay.className = 'schema-error';
+    errorDisplay.style.display = 'none';
+
+    const showError = (message: string) => {
+        errorDisplay.textContent = message;
+        errorDisplay.style.display = 'block';
+        setTimeout(() => {
+            errorDisplay.style.display = 'none';
+        }, 5000);
+    };
+
+    const handleFiles = (files: FileList | null) => {
+        if (!files) return;
+
+        Array.from(files).forEach(file => {
+            if (!file.name.endsWith('.proto')) {
+                showError(`${file.name}: Only .proto files are allowed`);
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const content = e.target?.result as string;
+                const validation = validateProtoSchema(content);
+
+                if (!validation.valid) {
+                    showError(`${file.name}: ${validation.error}`);
+                    return;
+                }
+
+                const schema: ProtoSchema = {
+                    id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                    name: file.name,
+                    content: content,
+                    createdAt: Date.now()
+                };
+
+                store.addSchema(schema);
+            };
+            reader.readAsText(file);
+        });
+    };
+
+    // Click to upload
+    dropZone.addEventListener('click', () => fileInput.click());
+
+    fileInput.addEventListener('change', () => {
+        handleFiles(fileInput.files);
+        fileInput.value = '';
+    });
+
+    // Drag and drop
+    dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropZone.classList.add('drag-over');
+    });
+
+    dropZone.addEventListener('dragleave', () => {
+        dropZone.classList.remove('drag-over');
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('drag-over');
+        handleFiles(e.dataTransfer?.files || null);
+    });
+
+    section.appendChild(dropZone);
+    section.appendChild(fileInput);
+    section.appendChild(errorDisplay);
+
+    return section;
+};
+
+const createSchemaList = (schemas: ProtoSchema[]): HTMLElement => {
+    const section = document.createElement('div');
+    section.className = 'schema-list-section';
+
+    if (schemas.length === 0) {
+        const emptyState = document.createElement('div');
+        emptyState.className = 'schema-empty-state';
+        emptyState.textContent = 'No schemas attached yet';
+        section.appendChild(emptyState);
+        return section;
+    }
+
+    const listHeader = document.createElement('div');
+    listHeader.className = 'schema-list-header';
+    listHeader.textContent = `Schemas (${schemas.length})`;
+    section.appendChild(listHeader);
+
+    const list = document.createElement('ul');
+    list.className = 'schema-list';
+
+    schemas.forEach(schema => {
+        const item = document.createElement('li');
+        item.className = 'schema-item';
+
+        const info = document.createElement('div');
+        info.className = 'schema-info';
+
+        const name = document.createElement('span');
+        name.className = 'schema-name';
+        name.textContent = schema.name;
+
+        const date = document.createElement('span');
+        date.className = 'schema-date';
+        date.textContent = new Date(schema.createdAt).toLocaleDateString();
+
+        info.appendChild(name);
+        info.appendChild(date);
+
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'schema-delete-btn';
+        deleteBtn.textContent = '×';
+        deleteBtn.title = 'Delete schema';
+        deleteBtn.addEventListener('click', () => {
+            store.removeSchema(schema.id);
+        });
+
+        item.appendChild(info);
+        item.appendChild(deleteBtn);
+        list.appendChild(item);
+    });
+
+    section.appendChild(list);
+    return section;
+};

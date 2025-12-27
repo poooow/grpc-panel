@@ -1,6 +1,7 @@
 import { store, type Traffic } from "../../state";
 import { renderProtoBuffer } from './protoBuffer';
 import { renderOverview } from './overview';
+import { renderSchemas } from './schemas';
 
 export const detail = (request: Traffic) => {
     const detailPanel = document.getElementById('detail-panel');
@@ -27,20 +28,22 @@ export const detail = (request: Traffic) => {
 
     // activeTab state from store
     const uiState = store.getUiState();
-    let activeTab: 'overview' | 'proto' = uiState.activeDetailTab || 'proto';
+    let activeTab: 'overview' | 'proto' | 'schemas' = uiState.activeDetailTab || 'proto';
 
     const renderContent = () => {
         contentContainer.innerHTML = '';
         if (activeTab === 'proto') {
             contentContainer.appendChild(renderProtoBuffer(request));
+        } else if (activeTab === 'schemas') {
+            contentContainer.appendChild(renderSchemas());
         } else {
             contentContainer.appendChild(renderOverview(request));
         }
     };
 
     const onTabChange = (tab: string) => {
-        activeTab = tab as 'overview' | 'proto';
-        store.setUiState({ activeDetailTab: tab as 'overview' | 'proto' });
+        activeTab = tab as 'overview' | 'proto' | 'schemas';
+        store.setUiState({ activeDetailTab: tab as 'overview' | 'proto' | 'schemas' });
         renderContent();
     };
 
@@ -67,6 +70,7 @@ const detailNav = (activeTab: string, onTabChange: (tab: string) => void) => {
 
     nav.appendChild(createBtn('proto', 'Proto buffer'));
     nav.appendChild(createBtn('overview', 'Overview'));
+    nav.appendChild(createBtn('schemas', 'Schemas'));
 
     return nav;
 };
