@@ -96,6 +96,27 @@
                         }
                     }
                 }
+
+                .schema-dropdown-container {
+                    display: flex;
+                    align-items: center;
+                    margin-left: auto;
+
+                    &.hidden {
+                        display: none;
+                    }
+
+                    .schema-select {
+                        font-size: 10px;
+                        padding: 1px 4px;
+                        border: 1px solid var(--color-gray-500);
+                        border-radius: 3px;
+                        background-color: var(--color-gray-200);
+                        color: var(--color-gray-800);
+                        outline: none;
+                        max-width: 150px;
+                    }
+                }
             }
 
             .body-container {

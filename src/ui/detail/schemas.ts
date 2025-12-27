@@ -1,5 +1,9 @@
 import { store, type ProtoSchema } from '../../state';
 import { validateProtoSchema } from '../../utils/protoValidator';
+import { formatProto } from '../../utils/formatters/proto';
+
+// Track expanded state per schema ID
+const expandedSchemas = new Set<string>();
 
 export const renderSchemas = (): HTMLElement => {
     const container = document.createElement('div');
@@ -139,6 +143,18 @@ const createSchemaList = (schemas: ProtoSchema[]): HTMLElement => {
         const item = document.createElement('li');
         item.className = 'schema-item';
 
+        const isExpanded = expandedSchemas.has(schema.id);
+        if (isExpanded) {
+            item.classList.add('expanded');
+        }
+
+        const header = document.createElement('div');
+        header.className = 'schema-header';
+
+        const expandIcon = document.createElement('span');
+        expandIcon.className = 'schema-expand-icon';
+        expandIcon.textContent = isExpanded ? '▼' : '▶';
+
         const info = document.createElement('div');
         info.className = 'schema-info';
 
@@ -157,12 +173,42 @@ const createSchemaList = (schemas: ProtoSchema[]): HTMLElement => {
         deleteBtn.className = 'schema-delete-btn';
         deleteBtn.textContent = '×';
         deleteBtn.title = 'Delete schema';
-        deleteBtn.addEventListener('click', () => {
+        deleteBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
             store.removeSchema(schema.id);
         });
 
-        item.appendChild(info);
-        item.appendChild(deleteBtn);
+        header.appendChild(expandIcon);
+        header.appendChild(info);
+        header.appendChild(deleteBtn);
+
+        // Toggle expand/collapse on header click
+        header.addEventListener('click', () => {
+            if (expandedSchemas.has(schema.id)) {
+                expandedSchemas.delete(schema.id);
+            } else {
+                expandedSchemas.add(schema.id);
+            }
+            // Re-render the list
+            store.forceSchemaUpdate();
+        });
+
+        item.appendChild(header);
+
+        // Content container (shown when expanded)
+        if (isExpanded) {
+            const contentContainer = document.createElement('div');
+            contentContainer.className = 'schema-content';
+
+            const formatted = formatProto(schema.content);
+            const pre = document.createElement('pre');
+            pre.className = 'schema-content-code';
+            pre.innerHTML = formatted.value;
+
+            contentContainer.appendChild(pre);
+            item.appendChild(contentContainer);
+        }
+
         list.appendChild(item);
     });
 

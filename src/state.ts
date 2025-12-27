@@ -73,6 +73,10 @@ export class Store {
         this.notifySchemaListeners();
     }
 
+    forceSchemaUpdate() {
+        this.notifySchemaListeners();
+    }
+
     subscribe(listener: StoreListener) {
         this.listeners.push(listener);
         // Initial call

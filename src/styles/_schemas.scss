@@ -89,20 +89,41 @@
 
 .schema-item {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 8px 10px;
+    flex-direction: column;
     background-color: var(--color-gray-300);
     border-radius: 4px;
     border: 1px solid var(--color-gray-500);
 
-    &:hover {
-        background-color: var(--color-gray-400);
+    &.expanded {
+        .schema-content {
+            display: block;
+        }
+    }
 
+    &:hover {
         .schema-delete-btn {
             opacity: 1;
         }
     }
+}
+
+.schema-header {
+    display: flex;
+    align-items: center;
+    padding: 8px 10px;
+    cursor: pointer;
+    gap: 8px;
+
+    &:hover {
+        background-color: var(--color-gray-400);
+    }
+}
+
+.schema-expand-icon {
+    font-size: 10px;
+    color: var(--color-gray-600);
+    width: 12px;
+    flex-shrink: 0;
 }
 
 .schema-info {
@@ -110,6 +131,7 @@
     flex-direction: column;
     gap: 2px;
     min-width: 0;
+    flex: 1;
 }
 
 .schema-name {
@@ -136,10 +158,51 @@
     border-radius: 4px;
     opacity: 0.5;
     transition: all 0.15s ease;
+    flex-shrink: 0;
 
     &:hover {
         background-color: var(--color-error);
         color: white;
         opacity: 1;
     }
+}
+
+.schema-content {
+    display: none;
+    border-top: 1px solid var(--color-gray-500);
+    padding: 10px;
+    max-height: 400px;
+    overflow: auto;
+}
+
+.schema-content-code {
+    margin: 0;
+    font-family: monospace;
+    font-size: 11px;
+    line-height: 1.5;
+    white-space: pre;
+    color: var(--color-gray-800);
+}
+
+// Proto syntax highlighting
+.proto-keyword {
+    color: #c678dd; // purple for keywords
+    font-weight: 600;
+}
+
+.proto-type {
+    color: #e5c07b; // yellow/orange for types
+}
+
+.proto-string {
+    color: #98c379; // green for strings
+}
+
+.proto-comment {
+    color: var(--color-gray-600);
+    font-style: italic;
+}
+
+.proto-number {
+    color: #d19a66; // orange for numbers
 }
