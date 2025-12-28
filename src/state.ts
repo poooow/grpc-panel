@@ -1,5 +1,6 @@
+import { MessageDefinition, parseProtoSchema } from './utils/schemaParser';
 
-export interface ProtoSchema {
+export interface ProtoSchemaFile {
     id: string;
     name: string;
     content: string;
@@ -11,6 +12,7 @@ export interface UIState {
     selectedTrafficId: string | null;
     filter: 'ALL' | 'GRPC';
     activeDetailTab?: 'overview' | 'proto' | 'schemas';
+    activeProtoTab?: 'schema' | 'decoded' | 'raw';
 }
 
 export type Traffic = chrome.devtools.network.Request & { id: string };
@@ -19,10 +21,11 @@ export type StoreListener = (data: { traffic: Traffic[]; ui: UIState }) => void;
 
 export class Store {
     private traffic: Traffic[] = [];
-    private ui: UIState = { followTraffic: false, selectedTrafficId: null, filter: 'ALL', activeDetailTab: 'proto' };
-    private schemas: ProtoSchema[] = [];
+    private ui: UIState = { followTraffic: false, selectedTrafficId: null, filter: 'ALL', activeDetailTab: 'proto', activeProtoTab: 'decoded' };
+    private schemas: ProtoSchemaFile[] = [];
+    private globalSchema: Record<string, MessageDefinition> = {};
     private listeners: StoreListener[] = [];
-    private schemaListeners: ((schemas: ProtoSchema[]) => void)[] = [];
+    private schemaListeners: ((schemas: ProtoSchemaFile[]) => void)[] = [];
 
     constructor() {
         this.loadUiState();
@@ -37,8 +40,12 @@ export class Store {
         return this.ui;
     }
 
-    getSchemas(): ProtoSchema[] {
+    getSchemaFiles(): ProtoSchemaFile[] {
         return this.schemas;
+    }
+
+    getGlobalSchema(): Record<string, MessageDefinition> {
+        return this.globalSchema;
     }
 
     addTraffic(request: Traffic) {
@@ -61,14 +68,16 @@ export class Store {
         this.notify();
     }
 
-    addSchema(schema: ProtoSchema) {
+    addSchema(schema: ProtoSchemaFile) {
         this.schemas.push(schema);
+        this.rebuildGlobalSchema();
         this.saveSchemas();
         this.notifySchemaListeners();
     }
 
     removeSchema(id: string) {
         this.schemas = this.schemas.filter((s) => s.id !== id);
+        this.rebuildGlobalSchema();
         this.saveSchemas();
         this.notifySchemaListeners();
     }
@@ -86,13 +95,21 @@ export class Store {
         };
     }
 
-    subscribeSchemas(listener: (schemas: ProtoSchema[]) => void) {
+    subscribeSchemas(listener: (schemas: ProtoSchemaFile[]) => void) {
         this.schemaListeners.push(listener);
         // Initial call
         listener(this.schemas);
         return () => {
             this.schemaListeners = this.schemaListeners.filter((l) => l !== listener);
         };
+    }
+
+    private rebuildGlobalSchema() {
+        this.globalSchema = {};
+        for (const schema of this.schemas) {
+            const messages = parseProtoSchema(schema.content);
+            this.globalSchema = { ...this.globalSchema, ...messages };
+        }
     }
 
     private notify() {
@@ -133,6 +150,7 @@ export class Store {
             chrome.storage.local.get('schemas', (result) => {
                 if (result.schemas && Array.isArray(result.schemas)) {
                     this.schemas = result.schemas;
+                    this.rebuildGlobalSchema();
                     this.notifySchemaListeners();
                 }
             });

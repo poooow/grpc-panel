@@ -1,6 +1,7 @@
-import { type Traffic } from "../../state";
+import { type Traffic, store } from "../../state";
 import { formatBody } from '../../utils/formatters';
 import { formatGet } from '../../utils/formatters/get';
+import { formatGrpcSchema } from "../../utils/formatters/grpcSchema";
 import { isBase64 } from '../../utils/string';
 
 export const renderProtoBuffer = (request: Traffic): HTMLElement => {
@@ -22,6 +23,7 @@ export const renderProtoBuffer = (request: Traffic): HTMLElement => {
 
     let formattedReq = formatBody(requestContent, contentTypeReq);
     let sectionTitle = 'Request Body';
+    const formattedReqSchemas = formatGrpcSchema(requestContent);
 
     // Handle GET params if body is empty
     if (!requestContent && request.request.queryString && request.request.queryString.length > 0) {
@@ -32,7 +34,7 @@ export const renderProtoBuffer = (request: Traffic): HTMLElement => {
     }
 
     // We render synchronously for request
-    content.appendChild(renderBodySection(sectionTitle, contentTypeReq, formattedReq, requestContent));
+    content.appendChild(renderBodySection(sectionTitle, contentTypeReq, formattedReq, formattedReqSchemas, requestContent));
 
     // Response body
     const responseContainer = document.createElement('div');
@@ -53,7 +55,8 @@ export const renderProtoBuffer = (request: Traffic): HTMLElement => {
         }
 
         const formattedRes = formatBody(content, contentTypeRes);
-        responseContainer.appendChild(renderBodySection('Response Body', contentTypeRes, formattedRes, content));
+        const formattedResSchemas = formatGrpcSchema(content);
+        responseContainer.appendChild(renderBodySection('Response Body', contentTypeRes, formattedRes, formattedResSchemas, content));
     });
 
     return content;
@@ -63,10 +66,12 @@ const renderBodySection = (
     title: string,
     encoding: string,
     formatted: { value: string, language: string },
+    formattedSchemas: { body: string, schema: string }[],
     raw: string
 ) => {
     const section = document.createElement('div');
     section.className = 'body-section';
+    const initialTab = store.getUiState().activeProtoTab || 'decoded';
 
     const header = document.createElement('div');
     header.className = 'body-header';
@@ -89,31 +94,62 @@ const renderBodySection = (
         const tabs = document.createElement('div');
         tabs.className = 'body-tabs';
 
+        const btnSchema = document.createElement('button');
+        btnSchema.className = 'tab';
+        btnSchema.textContent = 'Schema';
+
         const btnDecoded = document.createElement('button');
-        btnDecoded.className = 'tab active';
+        btnDecoded.className = 'tab';
         btnDecoded.textContent = 'Decoded';
 
         const btnRaw = document.createElement('button');
         btnRaw.className = 'tab';
         btnRaw.textContent = 'Raw';
 
+        // Initial state logic
+
+        if (initialTab === 'schema') {
+            btnSchema.classList.add('active');
+        } else if (initialTab === 'raw') {
+            btnRaw.classList.add('active');
+        } else {
+            btnDecoded.classList.add('active');
+        }
+
+        tabs.appendChild(btnSchema);
         tabs.appendChild(btnDecoded);
         tabs.appendChild(btnRaw);
         header.appendChild(tabs);
 
         // Tab Logic
+        btnSchema.onclick = () => {
+            btnSchema.classList.add('active');
+            btnDecoded.classList.remove('active');
+            btnRaw.classList.remove('active');
+            section.querySelector('.view-schema')?.classList.remove('hidden');
+            section.querySelector('.view-decoded')?.classList.add('hidden');
+            section.querySelector('.view-raw')?.classList.add('hidden');
+            store.setUiState({ activeProtoTab: 'schema' });
+        };
+
         btnDecoded.onclick = () => {
             btnDecoded.classList.add('active');
             btnRaw.classList.remove('active');
+            btnSchema.classList.remove('active');
             section.querySelector('.view-decoded')?.classList.remove('hidden');
             section.querySelector('.view-raw')?.classList.add('hidden');
+            section.querySelector('.view-schema')?.classList.add('hidden');
+            store.setUiState({ activeProtoTab: 'decoded' });
         };
 
         btnRaw.onclick = () => {
             btnRaw.classList.add('active');
             btnDecoded.classList.remove('active');
+            btnSchema.classList.remove('active');
             section.querySelector('.view-decoded')?.classList.add('hidden');
             section.querySelector('.view-raw')?.classList.remove('hidden');
+            section.querySelector('.view-schema')?.classList.add('hidden');
+            store.setUiState({ activeProtoTab: 'raw' });
         };
     }
 
@@ -128,8 +164,68 @@ const renderBodySection = (
         emptyView.textContent = '{empty}';
         bodyContainer.appendChild(emptyView);
     } else {
+        const schemaView = document.createElement('div');
+        schemaView.className = 'view-schema schema-decoded-list detail-panel-body hidden';
+        // Remove 'detail-panel-body' class style inheritance since we are making a list
+        schemaView.style.border = 'none';
+        schemaView.style.padding = '0';
+        schemaView.style.backgroundColor = 'transparent';
+
+        if (formattedSchemas.some(schema => schema.schema !== 'unknown')) {
+            formattedSchemas.forEach((schema, index) => {
+                const item = document.createElement('div');
+                item.className = 'schema-decoded-item';
+
+                // Expand the first item by default
+                const isFirst = index === 0;
+                if (isFirst) {
+                    item.classList.add('expanded');
+                }
+
+                // Header
+                const header = document.createElement('div');
+                header.className = 'schema-decoded-header';
+
+                const icon = document.createElement('span');
+                icon.className = 'schema-decoded-icon';
+                icon.textContent = isFirst ? '▼' : '▶';
+
+                const title = document.createElement('span');
+                title.className = 'schema-decoded-title';
+                title.textContent = schema.schema;
+
+                header.appendChild(icon);
+                header.appendChild(title);
+
+                // Content
+                const content = document.createElement('div');
+                content.className = 'schema-decoded-content';
+                content.innerHTML = `<pre>${schema.body}</pre>`;
+
+                // Toggle click handler
+                header.addEventListener('click', () => {
+                    const expanded = item.classList.toggle('expanded');
+                    icon.textContent = expanded ? '▼' : '▶';
+                });
+
+                item.appendChild(header);
+                item.appendChild(content);
+                schemaView.appendChild(item);
+            });
+        } else {
+            const noMatch = document.createElement('div');
+            noMatch.className = 'view-empty';
+            noMatch.textContent = 'No matching schema found';
+            noMatch.style.padding = '10px';
+            schemaView.appendChild(noMatch);
+        }
+
         const decodedView = document.createElement('div');
         decodedView.className = 'view-decoded detail-panel-body';
+        if (initialTab !== 'decoded') {
+            decodedView.classList.add('hidden');
+        }
+
         if (formatted.language === 'html') {
             decodedView.innerHTML = formatted.value;
         } else {
@@ -137,9 +233,20 @@ const renderBodySection = (
         }
 
         const rawView = document.createElement('div');
-        rawView.className = 'view-raw detail-panel-body hidden';
+        rawView.className = 'view-raw detail-panel-body';
+        if (initialTab !== 'raw') {
+            rawView.classList.add('hidden');
+        }
         rawView.textContent = raw;
 
+        // Apply visibility to schema view also
+        if (initialTab !== 'schema') {
+            schemaView.classList.add('hidden');
+        } else {
+            schemaView.classList.remove('hidden');
+        }
+
+        bodyContainer.appendChild(schemaView);
         bodyContainer.appendChild(decodedView);
         bodyContainer.appendChild(rawView);
     }

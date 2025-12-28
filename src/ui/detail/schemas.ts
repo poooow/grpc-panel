@@ -1,4 +1,4 @@
-import { store, type ProtoSchema } from '../../state';
+import { store, type ProtoSchemaFile } from '../../state';
 import { validateProtoSchema } from '../../utils/protoValidator';
 import { formatProto } from '../../utils/formatters/proto';
 
@@ -9,7 +9,7 @@ export const renderSchemas = (): HTMLElement => {
     const container = document.createElement('div');
     container.className = 'schemas-container';
 
-    const renderContent = (schemas: ProtoSchema[]) => {
+    const renderContent = (schemas: ProtoSchemaFile[]) => {
         container.innerHTML = '';
 
         // Upload section
@@ -75,7 +75,7 @@ const createUploadSection = (): HTMLElement => {
                     return;
                 }
 
-                const schema: ProtoSchema = {
+                const schema: ProtoSchemaFile = {
                     id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
                     name: file.name,
                     content: content,
@@ -119,7 +119,7 @@ const createUploadSection = (): HTMLElement => {
     return section;
 };
 
-const createSchemaList = (schemas: ProtoSchema[]): HTMLElement => {
+const createSchemaList = (schemas: ProtoSchemaFile[]): HTMLElement => {
     const section = document.createElement('div');
     section.className = 'schema-list-section';
 
