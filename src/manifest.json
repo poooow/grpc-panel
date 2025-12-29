@@ -1,10 +1,14 @@
 {
     "manifest_version": 3,
     "name": "gRPC Panel",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "description": "DevTools panel to inspect gRPC-web traffic.",
     "permissions": [
-        "storage"
+        "storage",
+        "webRequest"
+    ],
+      "host_permissions": [
+        "<all_urls>"
     ],
     "icons": {
         "16": "images/icon-16.png",
