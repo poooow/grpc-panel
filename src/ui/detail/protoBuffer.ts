@@ -1,4 +1,5 @@
 import { type Traffic, store } from "../../state";
+import { isGrpcRequest } from "../../utils/requestType";
 import { formatBody } from '../../utils/formatters';
 import { formatGet } from '../../utils/formatters/get';
 import { formatGrpcSchema } from "../../utils/formatters/grpcSchema";
@@ -34,7 +35,8 @@ export const renderProtoBuffer = (request: Traffic): HTMLElement => {
     }
 
     // We render synchronously for request
-    content.appendChild(renderBodySection(sectionTitle, contentTypeReq, formattedReq, formattedReqSchemas, requestContent));
+    const isGrpc = isGrpcRequest(request);
+    content.appendChild(renderBodySection(sectionTitle, contentTypeReq, formattedReq, formattedReqSchemas, requestContent, isGrpc));
 
     // Response body
     const responseContainer = document.createElement('div');
@@ -56,7 +58,7 @@ export const renderProtoBuffer = (request: Traffic): HTMLElement => {
 
         const formattedRes = formatBody(content, contentTypeRes);
         const formattedResSchemas = formatGrpcSchema(content);
-        responseContainer.appendChild(renderBodySection('Response Body', contentTypeRes, formattedRes, formattedResSchemas, content));
+        responseContainer.appendChild(renderBodySection('Response Body', contentTypeRes, formattedRes, formattedResSchemas, content, isGrpc));
     });
 
     return content;
@@ -67,11 +69,17 @@ const renderBodySection = (
     encoding: string,
     formatted: { value: string, language: string },
     formattedSchemas: { body: string, schema: string }[],
-    raw: string
+    raw: string,
+    isGrpc: boolean
 ) => {
     const section = document.createElement('div');
     section.className = 'body-section';
-    const initialTab = store.getUiState().activeProtoTab || 'decoded';
+    let initialTab = store.getUiState().activeProtoTab || 'decoded';
+
+    // Fallback if schema tab is selected but we are not in grpc
+    if (initialTab === 'schema' && !isGrpc) {
+        initialTab = 'decoded';
+    }
 
     const header = document.createElement('div');
     header.className = 'body-header';
@@ -116,7 +124,9 @@ const renderBodySection = (
             btnDecoded.classList.add('active');
         }
 
-        tabs.appendChild(btnSchema);
+        if (isGrpc) {
+            tabs.appendChild(btnSchema);
+        }
         tabs.appendChild(btnDecoded);
         tabs.appendChild(btnRaw);
         header.appendChild(tabs);
