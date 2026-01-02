@@ -13,7 +13,7 @@
 }
 
 .schema-drop-zone {
-    border: 2px dashed var(--color-gray-500);
+    border: 1px dashed var(--color-gray-600);
     border-radius: 6px;
     padding: 24px;
     display: flex;
@@ -146,7 +146,7 @@
     white-space: nowrap;
 }
 
-.schema-date {
+.schema-details {
     font-size: 10px;
     color: var(--color-gray-600);
 }

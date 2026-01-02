@@ -1,6 +1,7 @@
 import { store, type ProtoSchemaFile } from '../../state';
 import { validateProtoSchema } from '../../utils/protoValidator';
 import { formatProto } from '../../utils/formatters/proto';
+import { formatBytes } from '../../utils/formatBytes';
 
 // Track expanded state per schema ID
 const expandedSchemas = new Set<string>();
@@ -176,8 +177,8 @@ const createSchemaList = (schemas: ProtoSchemaFile[]): HTMLElement => {
             name.textContent = schema.name;
 
             const date = document.createElement('span');
-            date.className = 'schema-date';
-            date.textContent = new Date(schema.createdAt).toLocaleDateString();
+            date.className = 'schema-details';
+            date.textContent = `${new Date(schema.createdAt).toLocaleDateString()}, ${formatBytes(schema.content.length)}`;
 
             info.appendChild(name);
             info.appendChild(date);

@@ -24,8 +24,7 @@
             }
 
             &.active {
-                border-bottom: 2px solid var(--color-accent);
-                color: var(--color-gray-800);
+                background-color: var(--color-accent-dimmed);
                 font-weight: 500;
             }
         }
