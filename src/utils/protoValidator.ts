@@ -16,7 +16,7 @@ export function validateProtoSchema(content: string): ValidationResult {
     }
 
     // Check for syntax declaration
-    const syntaxMatch = trimmed.match(/^syntax\s*=\s*["'](proto[23])["']\s*;/m);
+    const syntaxMatch = trimmed.match(/^\s*syntax\s*=\s*["'](proto[23])["']\s*;/m);
     if (!syntaxMatch) {
         return { valid: false, error: 'Missing or invalid syntax declaration (expected "proto2" or "proto3")' };
     }
