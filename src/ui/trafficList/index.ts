@@ -3,7 +3,7 @@ import { isGrpcRequest, isJsonRequest, isXmlRequest, isFormRequest } from "../..
 import { store, type Traffic } from "../../state";
 import { detail } from "../detail";
 
-export function trafficList(request: Traffic) {
+export function trafficList(request: Traffic, animate: boolean = false) {
     const uiState = store.getUiState();
     if (uiState.filter === 'GRPC' && !isGrpcRequest(request)) {
         return;
@@ -17,6 +17,13 @@ export function trafficList(request: Traffic) {
     // Create traffic list item
     const trafficListItem = document.createElement('div');
     trafficListItem.classList.add('traffic-list-item');
+    if (animate) {
+        trafficListItem.classList.add('new-item');
+        // Remove class after animation to clean up
+        setTimeout(() => {
+            trafficListItem.classList.remove('new-item');
+        }, 500);
+    }
     trafficListItem.id = request.id;
 
     // Initial selection state

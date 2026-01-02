@@ -19,7 +19,7 @@
         }
 
         &.selected {
-            background-color: var(--color-gray-400);
+            background-color: var(--color-accent-dimmed);
             color: white;
         }
 
@@ -62,4 +62,18 @@
             color: var(--color-gray-700);
         }
     }
+}
+
+@keyframes highlight-fade {
+    0% {
+        background-color: var(--color-gray-500);
+    }
+
+    100% {
+        background-color: transparent;
+    }
+}
+
+.new-item {
+    animation: highlight-fade 0.5s ease-out;
 }

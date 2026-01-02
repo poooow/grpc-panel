@@ -45,7 +45,7 @@ chrome.devtools.network.onRequestFinished.addListener((request) => {
   store.addTraffic(traffic);
 
   // Render just this item (it checks filter internally)
-  trafficList(traffic);
+  trafficList(traffic, true);
 
   // Handle follow traffic
   const uiState = store.getUiState();
