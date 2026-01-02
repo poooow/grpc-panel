@@ -10,7 +10,8 @@
         "forceConsistentCasingInFileNames": true,
         "types": [
             "chrome",
-            "jest"
+            "jest",
+            "firefox-webext-browser"
         ]
     },
     "include": [
