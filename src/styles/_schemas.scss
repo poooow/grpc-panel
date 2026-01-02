@@ -47,12 +47,15 @@
 }
 
 .schema-error {
-    background-color: rgba(244, 67, 54, 0.1);
-    border: 1px solid var(--color-error);
-    border-radius: 4px;
-    padding: 8px 12px;
+    position: absolute;
+    bottom: 53px;
+    left: 18px;
     font-size: 11px;
     color: var(--color-error);
+    background-color: var(--color-gray-300);
+    border-radius: 4px;
+    padding: 4px 8px;
+    border: 1px solid var(--color-gray-500);
 }
 
 // Schema List Section
@@ -205,4 +208,131 @@
 
 .proto-number {
     color: #d19a66; // orange for numbers
+}
+
+// Create Button
+.schema-create-section {
+    display: flex;
+    width: 100%;
+    justify-content: end;
+}
+
+.schema-create-btn {
+    all: unset;
+    font-size: 11px;
+    text-align: center;
+    cursor: pointer;
+
+    &:hover {
+        color: var(--color-accent);
+    }
+}
+
+// Edit Mode
+.schema-edit-btn {
+    background: none;
+    border: none;
+    color: var(--color-gray-600);
+    font-size: 14px;
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 4px;
+    opacity: 0.5;
+    transition: all 0.15s ease;
+    flex-shrink: 0;
+    margin-right: 4px;
+
+    &:hover {
+        background-color: var(--color-gray-500);
+        color: var(--color-gray-900);
+        opacity: 1;
+    }
+}
+
+.schema-edit-form {
+    position: relative;
+    padding: 10px;
+    display: flex; // make it visible
+    flex-direction: column;
+    gap: 10px;
+    border-top: 1px solid var(--color-gray-500);
+    background-color: var(--color-gray-300);
+}
+
+.schema-edit-row {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.schema-edit-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--color-gray-700);
+}
+
+.schema-edit-name-input {
+    padding: 6px 8px;
+    border: 1px solid var(--color-gray-500);
+    border-radius: 4px;
+    font-size: 12px;
+    color: var(--color-gray-800);
+    background-color: var(--color-gray-200);
+
+    &:focus {
+        border-color: var(--color-accent);
+        outline: none;
+    }
+}
+
+.schema-edit-textarea {
+    min-height: 200px;
+    padding: 8px;
+    border: 1px solid var(--color-gray-500);
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 12px;
+    resize: vertical;
+    color: var(--color-gray-800);
+    background-color: var(--color-gray-200);
+
+    &:focus {
+        border-color: var(--color-accent);
+        outline: none;
+    }
+}
+
+.schema-edit-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 4px;
+}
+
+.schema-action-btn {
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: all 0.2s;
+
+    &.cancel {
+        background-color: transparent;
+        border-color: var(--color-gray-500);
+        color: var(--color-gray-800);
+
+        &:hover {
+            background-color: var(--color-gray-300);
+        }
+    }
+
+    &.save {
+        background-color: var(--color-accent-dimmed);
+        color: white;
+
+        &:hover {
+            background-color: var(--color-accent-hover);
+        }
+    }
 }

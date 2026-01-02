@@ -82,6 +82,13 @@ export class Store {
         this.notifySchemaListeners();
     }
 
+    updateSchema(id: string, updates: Partial<ProtoSchemaFile>) {
+        this.schemas = this.schemas.map((s) => (s.id === id ? { ...s, ...updates } : s));
+        this.rebuildGlobalSchema();
+        this.saveSchemas();
+        this.notifySchemaListeners();
+    }
+
     forceSchemaUpdate() {
         this.notifySchemaListeners();
     }
