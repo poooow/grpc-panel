@@ -74,6 +74,6 @@
     }
 }
 
-.new-item {
+.new-item:not(.selected) {
     animation: highlight-fade 0.5s ease-out;
 }
