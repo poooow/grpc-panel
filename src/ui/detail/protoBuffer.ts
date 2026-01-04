@@ -45,20 +45,20 @@ export const renderProtoBuffer = (traffic: Traffic): HTMLElement => {
     // Async update
     traffic.getContent((bodyContent) => {
         const contentTypeRes = getResponseContentType(traffic);
-        let content = bodyContent || '';
+        let responseContent = bodyContent || '';
 
         // Decode Base64 if needed
-        if (isBase64(content)) {
+        if (isBase64(responseContent)) {
             try {
-                content = atob(content);
+                responseContent = atob(responseContent);
             } catch (e) {
                 // ignore
             }
         }
 
-        const formattedRes = formatBody(content, contentTypeRes);
-        const formattedResSchemas = formatGrpcSchema(content);
-        responseContainer.appendChild(renderBodySection('Response Body', contentTypeRes, formattedRes, formattedResSchemas, content, isGrpc));
+        const formattedRes = formatBody(responseContent, contentTypeRes);
+        const formattedResSchemas = formatGrpcSchema(responseContent);
+        responseContainer.appendChild(renderBodySection('Response Body', contentTypeRes, formattedRes, formattedResSchemas, responseContent, isGrpc));
     });
 
     return content;

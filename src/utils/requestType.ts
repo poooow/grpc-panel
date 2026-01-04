@@ -16,7 +16,7 @@ const hasContentType = (request: chrome.devtools.network.Request, signatures: st
     return signatures.some(sig =>
         reqContentType.toLowerCase().includes(sig.toLowerCase()) ||
         resContentType.toLowerCase().includes(sig.toLowerCase()) ||
-        resMimeType.toLowerCase().includes(sig.toLowerCase())
+        resMimeType?.toLowerCase().includes(sig.toLowerCase())
     );
 };
 
