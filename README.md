@@ -54,3 +54,14 @@ To watch for changes and rebuild automatically (defaults to Chrome target):
 ```bash
 npm run dev
 ```
+
+## Packaging for Release
+
+To build and package the extension for release (generates `.zip` files):
+
+```bash
+npm run release
+```
+
+This will build fresh production copies for both Chrome and Firefox in `release/` directory.
+

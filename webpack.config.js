@@ -5,7 +5,7 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 module.exports = (env) => {
     const target = env.target || 'chrome';
     const distPath = path.resolve(__dirname, 'dist', target);
-    const manifestFile = target === 'firefox' ? 'src/manifest.firefox.json' : 'src/manifest.json';
+    const manifestFile = 'src/manifest.json';
 
     return {
         entry: {
