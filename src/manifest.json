@@ -1,20 +1,28 @@
 {
     "manifest_version": 3,
     "name": "gRPC Panel",
-    "version": "0.1.1",
+    "version": "1.0.0",
     "description": "DevTools panel to inspect gRPC-web traffic.",
+    "homepage_url": "https://github.com/poooow/grpc-panel",
     "permissions": [
-        "storage",
-        "webRequest"
-    ],
-      "host_permissions": [
-        "<all_urls>"
+        "storage"
     ],
     "icons": {
         "16": "images/icon-16.png",
         "32": "images/icon-32.png",
         "48": "images/icon-48.png",
         "128": "images/icon-128.png"
+    },
+    "browser_specific_settings": {
+        "gecko": {
+            "id": "364afb91-3c3c-45e0-a90c-815e3ef7e44b@mozilla",
+            "strict_min_version": "109.0",
+            "data_collection_permissions": {
+                "required": [
+                    "none"
+                ]
+            }
+        }
     },
     "devtools_page": "devtools.html"
 }

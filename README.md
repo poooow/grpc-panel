@@ -54,8 +54,3 @@ To watch for changes and rebuild automatically (defaults to Chrome target):
 ```bash
 npm run dev
 ```
-
-## Technology Stack
-- TypeScript
-- Webpack
-- Sass

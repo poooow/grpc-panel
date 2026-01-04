@@ -1,7 +1,7 @@
 {
-  "name": "network-traffic-devtools-extension",
+  "name": "protocol-buffer-devtools-extension",
   "version": "1.0.0",
-  "description": "Browser extension to display network traffic in DevTools",
+  "description": "DevTools panel to inspect gRPC-web traffic.",
   "scripts": {
     "build": "npm run build:chrome && npm run build:firefox",
     "build:chrome": "webpack --mode production --env target=chrome",
@@ -9,7 +9,6 @@
     "dev": "webpack --mode development --watch",
     "lint": "eslint src --ext .ts"
   },
-  "author": "",
   "license": "ISC",
   "devDependencies": {
     "@types/chrome": "^0.0.254",
