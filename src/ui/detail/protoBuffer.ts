@@ -5,13 +5,13 @@ import { formatGet } from '../../utils/formatters/get';
 import { formatGrpcSchema } from "../../utils/formatters/grpcSchema";
 import { isBase64 } from '../../utils/string';
 
-export const renderProtoBuffer = (request: Traffic): HTMLElement => {
+export const renderProtoBuffer = (traffic: Traffic): HTMLElement => {
     const content = document.createElement('div');
     content.className = 'detail-panel-content proto-buffer-content';
 
     // Request body
-    const contentTypeReq = getContentType(request);
-    let requestContent = request.request.postData?.text || '';
+    const contentTypeReq = getRequestContentType(traffic);
+    let requestContent = traffic.request.postData?.text || '';
 
     // Decode Base64 if needed
     if (isBase64(requestContent)) {
@@ -27,15 +27,15 @@ export const renderProtoBuffer = (request: Traffic): HTMLElement => {
     const formattedReqSchemas = formatGrpcSchema(requestContent);
 
     // Handle GET params if body is empty
-    if (!requestContent && request.request.queryString && request.request.queryString.length > 0) {
+    if (!requestContent && traffic.request.queryString && traffic.request.queryString.length > 0) {
         // Construct query string for formatter
-        requestContent = request.request.queryString.map(q => `${q.name}=${encodeURIComponent(q.value)}`).join('&');
+        requestContent = traffic.request.queryString.map(q => `${q.name}=${encodeURIComponent(q.value)}`).join('&');
         formattedReq = formatGet(requestContent);
         sectionTitle = 'Request Parameters';
     }
 
     // We render synchronously for request
-    const isGrpc = isGrpcRequest(request);
+    const isGrpc = isGrpcRequest(traffic);
     content.appendChild(renderBodySection(sectionTitle, contentTypeReq, formattedReq, formattedReqSchemas, requestContent, isGrpc));
 
     // Response body
@@ -43,8 +43,8 @@ export const renderProtoBuffer = (request: Traffic): HTMLElement => {
     content.appendChild(responseContainer);
 
     // Async update
-    request.getContent((bodyContent) => {
-        const contentTypeRes = request.response.content?.mimeType || '';
+    traffic.getContent((bodyContent) => {
+        const contentTypeRes = getResponseContentType(traffic);
         let content = bodyContent || '';
 
         // Decode Base64 if needed
@@ -266,10 +266,18 @@ const renderBodySection = (
     return section;
 };
 
-const getContentType = (traffic: Traffic) => {
+const getRequestContentType = (traffic: Traffic) => {
     if (traffic.request && traffic.request.headers && Array.isArray(traffic.request.headers)) {
         const contentType = traffic.request.headers.find(header => header.name.toLowerCase() === 'content-type');
         if (contentType) return contentType.value;
     }
-    return traffic.request.postData?.mimeType || traffic.response.content?.mimeType || '';
+    return traffic.request.postData?.mimeType || '';
+}
+
+const getResponseContentType = (traffic: Traffic) => {
+    if (traffic.response && traffic.response.headers && Array.isArray(traffic.response.headers)) {
+        const contentType = traffic.response.headers.find(header => header.name.toLowerCase() === 'content-type');
+        if (contentType) return contentType.value;
+    }
+    return traffic.response.content?.mimeType || '';
 }
