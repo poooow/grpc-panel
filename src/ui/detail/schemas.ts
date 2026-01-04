@@ -84,7 +84,7 @@ const createUploadSection = (): HTMLElement => {
                 }
 
                 const schema: ProtoSchemaFile = {
-                    id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                    id: `${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
                     name: file.name,
                     content: content,
                     createdAt: Date.now()
@@ -344,7 +344,7 @@ const createCreateButton = (): HTMLElement => {
     btn.textContent = '+ Create New Schema';
 
     btn.addEventListener('click', () => {
-        const newId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        const newId = `${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
         const newSchema: ProtoSchemaFile = {
             id: newId,
             name: 'untitled.proto',
