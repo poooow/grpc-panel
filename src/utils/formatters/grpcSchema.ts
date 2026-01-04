@@ -1,6 +1,7 @@
 import { store } from '../../state';
 import { ProtoDecoderSchema } from '../protoDecoderSchema';
 import { highlightJson } from './json';
+import { escapeHtml } from '../string';
 
 // Minimum score to accept a schema match
 const MIN_SCORE = 1;
@@ -44,13 +45,15 @@ export const formatGrpcSchema = (body: string): { body: string, schema: string }
         candidates.sort((a, b) => b.score - a.score);
 
         if (candidates.length === 0) {
-            return [{ body, schema: 'unknown' }];
+            // Escape raw body to prevent XSS when rendered via innerHTML
+            return [{ body: escapeHtml(body), schema: 'unknown' }];
         }
 
         // Return top results (without score field)
         return candidates.map(c => ({ body: c.body, schema: c.schema }));
 
     } catch (e) {
-        return [{ body, schema: 'unknown' }];
+        // Escape raw body to prevent XSS when rendered via innerHTML
+        return [{ body: escapeHtml(body), schema: 'unknown' }];
     }
 };
