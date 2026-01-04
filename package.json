@@ -1,6 +1,6 @@
 {
   "name": "protocol-buffer-devtools-extension",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "DevTools panel to inspect gRPC-web traffic.",
   "scripts": {
     "build": "npm run build:chrome && npm run build:firefox",
