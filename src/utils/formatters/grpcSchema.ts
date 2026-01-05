@@ -4,9 +4,10 @@ import { highlightJson } from './json';
 import { escapeHtml } from '../string';
 
 // Minimum score to accept a schema match
-const MIN_SCORE = 1;
+const MIN_SCORE = 2;
+const SCORE_MESSAGE_WEIGHT = 10;
 
-export const formatGrpcSchema = (body: string): { body: string, schema: string }[] => {
+export const formatGrpcSchema = (body: string, url: string): { body: string, schema: string }[] => {
     try {
         const buffer = new Uint8Array(body.split('').map(c => c.charCodeAt(0)));
         const globalSchema = store.getGlobalSchema();
@@ -20,10 +21,21 @@ export const formatGrpcSchema = (body: string): { body: string, schema: string }
 
         for (const [messageName, messageDef] of Object.entries(globalSchema)) {
             try {
-                const { result: decoded, score } = ProtoDecoderSchema.decode(buffer, messageDef, globalSchema);
+                const { result: decoded, score: scoreFields } = ProtoDecoderSchema.decode(buffer, messageDef, globalSchema);
+
+                // Score based on comparison of URL path and message name
+                let scoreMessage = 0;
+                const path = new URL(url).pathname;
+                path.split('/').forEach(part => {
+                    if (part.includes(messageName)) {
+                        scoreMessage = scoreMessage + SCORE_MESSAGE_WEIGHT;
+                    }
+                });
+
+                const scoreTotal = scoreFields + scoreMessage;
 
                 // Use score heuristic: must have at least MIN_SCORE matching fields
-                if (score >= MIN_SCORE) {
+                if (scoreTotal >= MIN_SCORE) {
                     const jsonString = JSON.stringify(decoded, (key, value) =>
                         typeof value === 'bigint'
                             ? value.toString()
@@ -33,7 +45,7 @@ export const formatGrpcSchema = (body: string): { body: string, schema: string }
                     candidates.push({
                         body: highlightJson(jsonString),
                         schema: messageName,
-                        score: score
+                        score: scoreTotal
                     });
                 }
             } catch (e) {

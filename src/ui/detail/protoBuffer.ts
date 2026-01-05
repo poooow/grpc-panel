@@ -24,7 +24,7 @@ export const renderProtoBuffer = (traffic: Traffic): HTMLElement => {
 
     let formattedReq = formatBody(requestContent, contentTypeReq);
     let sectionTitle = 'Request Body';
-    const formattedReqSchemas = formatGrpcSchema(requestContent);
+    const formattedReqSchemas = formatGrpcSchema(requestContent, traffic.request.url);
 
     // Handle GET params if body is empty
     if (!requestContent && traffic.request.queryString && traffic.request.queryString.length > 0) {
@@ -57,7 +57,7 @@ export const renderProtoBuffer = (traffic: Traffic): HTMLElement => {
         }
 
         const formattedRes = formatBody(responseContent, contentTypeRes);
-        const formattedResSchemas = formatGrpcSchema(responseContent);
+        const formattedResSchemas = formatGrpcSchema(responseContent, traffic.request.url);
         responseContainer.appendChild(renderBodySection('Response Body', contentTypeRes, formattedRes, formattedResSchemas, responseContent, isGrpc));
     });
 
