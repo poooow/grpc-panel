@@ -5,12 +5,19 @@ import { escapeHtml } from '../string';
 
 // Minimum score to accept a schema match
 const MIN_SCORE = 1;
-const SCORE_MESSAGE_WEIGHT = 3;
+// Weight for message name matching
+const SCORE_MESSAGE_WEIGHT = 8;
 
 export const formatGrpcSchema = (
   body: string,
-  url: string
-): { body: string; schema: string; score: number }[] => {
+  url: string,
+  trafficType: "request" | "response"
+): {
+  body: string;
+  schema: string;
+  scoreFields: number;
+  scoreMessage: number;
+}[] => {
   try {
     const buffer = new Uint8Array(body.split("").map((c) => c.charCodeAt(0)));
     const globalSchema = store.getGlobalSchema();
@@ -18,7 +25,8 @@ export const formatGrpcSchema = (
     type SchemaMatch = {
       body: string;
       schema: string;
-      score: number;
+      scoreFields: number;
+      scoreMessage: number;
     };
     const candidates: SchemaMatch[] = [];
 
@@ -30,14 +38,23 @@ export const formatGrpcSchema = (
         // Score based on comparison of URL path and message name
         let scoreMessage = 0;
         const path = new URL(url).pathname;
-        path.split("/").forEach((part) => {
-          console.log(part, messageName);
-          if (part.includes(messageName)) {
-            scoreMessage = scoreMessage * SCORE_MESSAGE_WEIGHT;
+
+        const messageArray = messageName
+          .split(/(?=[A-Z])/)
+          .map((word) => word.toLowerCase());
+        path.split("/").forEach((urlPart) => {
+          if (trafficType === "request" && messageArray.includes("request")) {
+            scoreMessage++;
+          }
+          if (trafficType === "response" && messageArray.includes("response")) {
+            scoreMessage++;
+          }
+          if (messageArray.includes(urlPart)) {
+            scoreMessage++;
           }
         });
 
-        const scoreTotal = scoreFields + scoreMessage;
+        const scoreTotal = scoreFields + scoreMessage * SCORE_MESSAGE_WEIGHT;
 
         // Use score heuristic: must have at least MIN_SCORE matching fields
         if (scoreTotal >= MIN_SCORE) {
@@ -51,7 +68,8 @@ export const formatGrpcSchema = (
           candidates.push({
             body: highlightJson(jsonString),
             schema: messageName,
-            score: scoreTotal,
+            scoreFields: scoreTotal,
+            scoreMessage: scoreMessage,
           });
         }
       } catch (e) {
@@ -60,21 +78,39 @@ export const formatGrpcSchema = (
     }
 
     // Sort by score descending
-    candidates.sort((a, b) => b.score - a.score);
+    candidates.sort(
+      (a, b) =>
+        b.scoreFields + b.scoreMessage - (a.scoreFields + a.scoreMessage)
+    );
 
     if (candidates.length === 0) {
       // Escape raw body to prevent XSS when rendered via innerHTML
-      return [{ body: escapeHtml(body), schema: "unknown", score: 0 }];
+      return [
+        {
+          body: escapeHtml(body),
+          schema: "unknown",
+          scoreFields: 0,
+          scoreMessage: 0,
+        },
+      ];
     }
 
     // Return top results (without score field)
     return candidates.map((c) => ({
       body: c.body,
       schema: c.schema,
-      score: c.score,
+      scoreFields: c.scoreFields,
+      scoreMessage: c.scoreMessage,
     }));
   } catch (e) {
     // Escape raw body to prevent XSS when rendered via innerHTML
-    return [{ body: escapeHtml(body), schema: "unknown", score: 0 }];
+    return [
+      {
+        body: escapeHtml(body),
+        schema: "unknown",
+        scoreFields: 0,
+        scoreMessage: 0,
+      },
+    ];
   }
 };

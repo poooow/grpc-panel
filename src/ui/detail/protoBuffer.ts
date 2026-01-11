@@ -5,6 +5,8 @@ import { formatGet } from "../../utils/formatters/get";
 import { formatGrpcSchema } from "../../utils/formatters/grpcSchema";
 import { isBase64 } from "../../utils/string";
 
+const MAX_SCHEMA_MATCHES = 10;
+
 export const renderProtoBuffer = (traffic: Traffic): HTMLElement => {
   const content = document.createElement("div");
   content.className = "detail-panel-content proto-buffer-content";
@@ -26,7 +28,8 @@ export const renderProtoBuffer = (traffic: Traffic): HTMLElement => {
   let sectionTitle = "Request Body";
   const formattedReqSchemas = formatGrpcSchema(
     requestContent,
-    traffic.request.url
+    traffic.request.url,
+    "request"
   );
 
   // Handle GET params if body is empty
@@ -77,7 +80,8 @@ export const renderProtoBuffer = (traffic: Traffic): HTMLElement => {
     const formattedRes = formatBody(responseContent, contentTypeRes);
     const formattedResSchemas = formatGrpcSchema(
       responseContent,
-      traffic.request.url
+      traffic.request.url,
+      "response"
     );
     responseContainer.appendChild(
       renderBodySection(
@@ -98,7 +102,12 @@ const renderBodySection = (
   title: string,
   encoding: string,
   formatted: { value: string; language: string },
-  formattedSchemas: { body: string; schema: string; score: number }[],
+  formattedSchemas: {
+    body: string;
+    schema: string;
+    scoreFields: number;
+    scoreMessage: number;
+  }[],
   raw: string,
   isGrpc: boolean
 ) => {
@@ -213,9 +222,13 @@ const renderBodySection = (
     schemaView.style.backgroundColor = "transparent";
 
     if (formattedSchemas.some((schema) => schema.schema !== "unknown")) {
-      formattedSchemas.forEach((schema, index) => {
+      const renderItem = (
+        schema: (typeof formattedSchemas)[0],
+        index: number
+      ) => {
         const item = document.createElement("div");
         item.className = "schema-decoded-item";
+        if (schema.scoreMessage > 1) item.classList.add("high-score");
 
         // Expand the first item by default
         const isFirst = index === 0;
@@ -233,7 +246,6 @@ const renderBodySection = (
 
         const title = document.createElement("span");
         title.className = "schema-decoded-title";
-        title.dataset.score = schema.score.toString();
         title.textContent = schema.schema;
 
         header.appendChild(icon);
@@ -253,7 +265,23 @@ const renderBodySection = (
         item.appendChild(header);
         item.appendChild(content);
         schemaView.appendChild(item);
-      });
+      };
+
+      formattedSchemas.slice(0, MAX_SCHEMA_MATCHES).forEach(renderItem);
+
+      if (formattedSchemas.length > MAX_SCHEMA_MATCHES) {
+        const showMore = document.createElement("div");
+        showMore.className = "schema-list-show-more";
+        showMore.textContent = `Show all matches (${formattedSchemas.length})`;
+
+        showMore.onclick = () => {
+          formattedSchemas.slice(MAX_SCHEMA_MATCHES).forEach((s, i) => {
+            renderItem(s, MAX_SCHEMA_MATCHES + i);
+          });
+          showMore.remove();
+        };
+        schemaView.appendChild(showMore);
+      }
     } else {
       const noMatch = document.createElement("div");
       noMatch.className = "view-empty";
