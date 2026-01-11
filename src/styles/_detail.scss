@@ -63,6 +63,9 @@
                     color: var(--color-gray-700);
                     font-size: 11px;
                     margin-right: auto;
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
                 }
 
                 .body-tabs {
