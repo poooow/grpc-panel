@@ -76,6 +76,10 @@ export class ProtoDecoderSchema {
             }
 
             if (value !== undefined) {
+                if (key.match(/uuid/i)) {
+                    value = this.tryFormatUuid(value);
+                }
+
                 if (result[key]) {
                     if (!Array.isArray(result[key])) {
                         result[key] = [result[key] as ProtoValue];
@@ -87,6 +91,54 @@ export class ProtoDecoderSchema {
             }
         }
         return { result, score };
+    }
+
+    private tryFormatUuid(value: ProtoValue): ProtoValue {
+        try {
+            // Case 1: Wrapped object { "1": "base64" } or { "value": "base64" }
+            if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+                const keys = Object.keys(value);
+                if (keys.length === 1 && (keys[0] === '1' || keys[0] === 'value')) {
+                    const inner = (value as Record<string, unknown>)[keys[0]];
+                    if (typeof inner === 'string') {
+                        const formatted = this.formatUuidString(inner);
+                        if (formatted) return formatted;
+                    }
+                }
+            }
+            
+            // Case 2: Direct base64 string
+            if (typeof value === 'string') {
+                const formatted = this.formatUuidString(value);
+                if (formatted) return formatted;
+            }
+        } catch (e) {
+            // Ignore errors and return original value
+        }
+        return value;
+    }
+
+    private formatUuidString(base64: string): string | null {
+        try {
+            const binary = atob(base64);
+            if (binary.length !== 16) return null;
+
+            const bytes = new Uint8Array(16);
+            for (let i = 0; i < 16; i++) {
+                bytes[i] = binary.charCodeAt(i);
+            }
+
+            const hex = Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
+            return [
+                hex.slice(0, 8),
+                hex.slice(8, 12),
+                hex.slice(12, 16),
+                hex.slice(16, 20),
+                hex.slice(20)
+            ].join('-');
+        } catch (e) {
+            return null;
+        }
     }
 
     private decodeLengthDelimited(data: Uint8Array): ProtoValue {
