@@ -147,97 +147,100 @@ const createSchemaList = (schemas: ProtoSchemaFile[]): HTMLElement => {
     const list = document.createElement('ul');
     list.className = 'schema-list';
 
-    schemas.forEach(schema => {
-        const item = document.createElement('li');
-        item.className = 'schema-item';
+    schemas
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .forEach((schema) => {
+        const item = document.createElement("li");
+        item.className = "schema-item";
 
         const isEditing = editingSchemaId === schema.id;
 
         if (isEditing) {
-            item.appendChild(renderEditMode(schema));
-            item.classList.add('expanded'); // Ensure container is large enough if needed
+          item.appendChild(renderEditMode(schema));
+          item.classList.add("expanded"); // Ensure container is large enough if needed
         } else {
-            const isExpanded = expandedSchemas.has(schema.id);
-            if (isExpanded) {
-                item.classList.add('expanded');
+          const isExpanded = expandedSchemas.has(schema.id);
+          if (isExpanded) {
+            item.classList.add("expanded");
+          }
+
+          const header = document.createElement("div");
+          header.className = "schema-header";
+
+          const expandIcon = document.createElement("span");
+          expandIcon.className = "schema-expand-icon";
+          expandIcon.textContent = isExpanded ? "▼" : "▶";
+
+          const info = document.createElement("div");
+          info.className = "schema-info";
+
+          const name = document.createElement("span");
+          name.className = "schema-name";
+          name.textContent = schema.name;
+
+          const date = document.createElement("span");
+          date.className = "schema-details";
+          date.textContent = `${new Date(
+            schema.createdAt
+          ).toLocaleDateString()}, ${formatBytes(schema.content.length)}`;
+
+          info.appendChild(name);
+          info.appendChild(date);
+
+          const editBtn = document.createElement("button");
+          editBtn.className = "schema-edit-btn";
+          editBtn.textContent = "✎";
+          editBtn.title = "Edit schema";
+          editBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            editingSchemaId = schema.id;
+            store.forceSchemaUpdate();
+          });
+
+          header.appendChild(expandIcon);
+          header.appendChild(info);
+          header.appendChild(editBtn);
+
+          const deleteBtn = document.createElement("button");
+          deleteBtn.className = "schema-delete-btn";
+          deleteBtn.textContent = "×";
+          deleteBtn.title = "Delete schema";
+          deleteBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            store.removeSchema(schema.id);
+          });
+          header.appendChild(deleteBtn);
+
+          // Toggle expand/collapse on header click
+          header.addEventListener("click", () => {
+            if (expandedSchemas.has(schema.id)) {
+              expandedSchemas.delete(schema.id);
+            } else {
+              expandedSchemas.add(schema.id);
             }
+            // Re-render the list
+            store.forceSchemaUpdate();
+          });
 
-            const header = document.createElement('div');
-            header.className = 'schema-header';
+          item.appendChild(header);
 
-            const expandIcon = document.createElement('span');
-            expandIcon.className = 'schema-expand-icon';
-            expandIcon.textContent = isExpanded ? '▼' : '▶';
+          // Content container (shown when expanded)
+          if (isExpanded) {
+            const contentContainer = document.createElement("div");
+            contentContainer.className = "schema-content";
 
-            const info = document.createElement('div');
-            info.className = 'schema-info';
+            const formatted = formatProto(schema.content);
+            const pre = document.createElement("pre");
+            pre.className = "schema-content-code";
+            pre.innerHTML = formatted.value;
 
-            const name = document.createElement('span');
-            name.className = 'schema-name';
-            name.textContent = schema.name;
-
-            const date = document.createElement('span');
-            date.className = 'schema-details';
-            date.textContent = `${new Date(schema.createdAt).toLocaleDateString()}, ${formatBytes(schema.content.length)}`;
-
-            info.appendChild(name);
-            info.appendChild(date);
-
-            const editBtn = document.createElement('button');
-            editBtn.className = 'schema-edit-btn';
-            editBtn.textContent = '✎';
-            editBtn.title = 'Edit schema';
-            editBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                editingSchemaId = schema.id;
-                store.forceSchemaUpdate();
-            });
-
-            header.appendChild(expandIcon);
-            header.appendChild(info);
-            header.appendChild(editBtn);
-
-            const deleteBtn = document.createElement('button');
-            deleteBtn.className = 'schema-delete-btn';
-            deleteBtn.textContent = '×';
-            deleteBtn.title = 'Delete schema';
-            deleteBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                store.removeSchema(schema.id);
-            });
-            header.appendChild(deleteBtn);
-
-
-            // Toggle expand/collapse on header click
-            header.addEventListener('click', () => {
-                if (expandedSchemas.has(schema.id)) {
-                    expandedSchemas.delete(schema.id);
-                } else {
-                    expandedSchemas.add(schema.id);
-                }
-                // Re-render the list
-                store.forceSchemaUpdate();
-            });
-
-            item.appendChild(header);
-
-            // Content container (shown when expanded)
-            if (isExpanded) {
-                const contentContainer = document.createElement('div');
-                contentContainer.className = 'schema-content';
-
-                const formatted = formatProto(schema.content);
-                const pre = document.createElement('pre');
-                pre.className = 'schema-content-code';
-                pre.innerHTML = formatted.value;
-
-                contentContainer.appendChild(pre);
-                item.appendChild(contentContainer);
-            }
+            contentContainer.appendChild(pre);
+            item.appendChild(contentContainer);
+          }
         }
 
         list.appendChild(item);
-    });
+      });
 
     section.appendChild(list);
     return section;
