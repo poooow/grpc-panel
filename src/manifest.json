@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "gRPC Panel",
-    "version": "1.1.2",
+    "version": "1.1.3",
     "description": "DevTools panel to inspect gRPC-web traffic.",
     "homepage_url": "https://github.com/poooow/grpc-panel",
     "permissions": [
