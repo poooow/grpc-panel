@@ -5,7 +5,7 @@ import { formatGet } from "../../utils/formatters/get";
 import { formatGrpcSchema } from "../../utils/formatters/grpcSchema";
 import { isBase64 } from "../../utils/string";
 
-const MAX_SCHEMA_MATCHES = 10;
+const MAX_SCHEMA_MATCHES = 1;
 
 export const renderProtoBuffer = (traffic: Traffic): HTMLElement => {
   const content = document.createElement("div");
@@ -113,11 +113,11 @@ const renderBodySection = (
 ) => {
   const section = document.createElement("div");
   section.className = "body-section";
-  let initialTab = store.getUiState().activeProtoTab || "decoded";
+  let initialTab = store.getUiState().activeProtoTab || "formatted";
 
   // Fallback if schema tab is selected but we are not in grpc
   if (initialTab === "schema" && !isGrpc) {
-    initialTab = "decoded";
+    initialTab = "formatted";
   }
 
   const header = document.createElement("div");
@@ -145,9 +145,9 @@ const renderBodySection = (
     btnSchema.className = "tab";
     btnSchema.textContent = "Schema";
 
-    const btnDecoded = document.createElement("button");
-    btnDecoded.className = "tab";
-    btnDecoded.textContent = "Decoded";
+    const btnFormatted = document.createElement("button");
+    btnFormatted.className = "tab";
+    btnFormatted.textContent = "Formatted";
 
     const btnRaw = document.createElement("button");
     btnRaw.className = "tab";
@@ -160,42 +160,42 @@ const renderBodySection = (
     } else if (initialTab === "raw") {
       btnRaw.classList.add("active");
     } else {
-      btnDecoded.classList.add("active");
+      btnFormatted.classList.add("active");
     }
 
     if (isGrpc) {
       tabs.appendChild(btnSchema);
     }
-    tabs.appendChild(btnDecoded);
+    tabs.appendChild(btnFormatted);
     tabs.appendChild(btnRaw);
     header.appendChild(tabs);
 
     // Tab Logic
     btnSchema.onclick = () => {
       btnSchema.classList.add("active");
-      btnDecoded.classList.remove("active");
+      btnFormatted.classList.remove("active");
       btnRaw.classList.remove("active");
       section.querySelector(".view-schema")?.classList.remove("hidden");
-      section.querySelector(".view-decoded")?.classList.add("hidden");
+      section.querySelector(".view-formatted")?.classList.add("hidden");
       section.querySelector(".view-raw")?.classList.add("hidden");
       store.setUiState({ activeProtoTab: "schema" });
     };
 
-    btnDecoded.onclick = () => {
-      btnDecoded.classList.add("active");
+    btnFormatted.onclick = () => {
+      btnFormatted.classList.add("active");
       btnRaw.classList.remove("active");
       btnSchema.classList.remove("active");
-      section.querySelector(".view-decoded")?.classList.remove("hidden");
+      section.querySelector(".view-formatted")?.classList.remove("hidden");
       section.querySelector(".view-raw")?.classList.add("hidden");
       section.querySelector(".view-schema")?.classList.add("hidden");
-      store.setUiState({ activeProtoTab: "decoded" });
+      store.setUiState({ activeProtoTab: "formatted" });
     };
 
     btnRaw.onclick = () => {
       btnRaw.classList.add("active");
-      btnDecoded.classList.remove("active");
+      btnFormatted.classList.remove("active");
       btnSchema.classList.remove("active");
-      section.querySelector(".view-decoded")?.classList.add("hidden");
+      section.querySelector(".view-formatted")?.classList.add("hidden");
       section.querySelector(".view-raw")?.classList.remove("hidden");
       section.querySelector(".view-schema")?.classList.add("hidden");
       store.setUiState({ activeProtoTab: "raw" });
@@ -290,16 +290,16 @@ const renderBodySection = (
       schemaView.appendChild(noMatch);
     }
 
-    const decodedView = document.createElement("div");
-    decodedView.className = "view-decoded detail-panel-body";
-    if (initialTab !== "decoded") {
-      decodedView.classList.add("hidden");
+    const formattedView = document.createElement("div");
+    formattedView.className = "view-formatted detail-panel-body";
+    if (initialTab !== "formatted") {
+      formattedView.classList.add("hidden");
     }
 
     if (formatted.language === "html") {
-      decodedView.innerHTML = formatted.value;
+      formattedView.innerHTML = formatted.value;
     } else {
-      decodedView.textContent = formatted.value;
+      formattedView.textContent = formatted.value;
     }
 
     const rawView = document.createElement("div");
@@ -317,7 +317,7 @@ const renderBodySection = (
     }
 
     bodyContainer.appendChild(schemaView);
-    bodyContainer.appendChild(decodedView);
+    bodyContainer.appendChild(formattedView);
     bodyContainer.appendChild(rawView);
   }
 

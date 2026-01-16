@@ -1,4 +1,4 @@
-import { MessageDefinition, parseProtoSchema } from './utils/schemaParser';
+import { MessageDefinition, parseProtoSchema } from "./utils/schemaParser";
 
 export interface ProtoSchemaFile {
     id: string;
@@ -10,9 +10,9 @@ export interface ProtoSchemaFile {
 export interface UIState {
     followTraffic: boolean;
     selectedTrafficId: string | null;
-    filter: 'ALL' | 'GRPC';
-    activeDetailTab?: 'overview' | 'proto' | 'schemas';
-    activeProtoTab?: 'schema' | 'decoded' | 'raw';
+    filter: "ALL" | "GRPC";
+    activeDetailTab?: "overview" | "proto" | "schemas";
+    activeProtoTab?: "schema" | "formatted" | "raw";
 }
 
 export type Traffic = chrome.devtools.network.Request & { id: string };
@@ -21,7 +21,13 @@ export type StoreListener = (data: { traffic: Traffic[]; ui: UIState }) => void;
 
 export class Store {
     private traffic: Traffic[] = [];
-    private ui: UIState = { followTraffic: false, selectedTrafficId: null, filter: 'ALL', activeDetailTab: 'proto', activeProtoTab: 'decoded' };
+    private ui: UIState = {
+        followTraffic: false,
+        selectedTrafficId: null,
+        filter: "ALL",
+        activeDetailTab: "proto",
+        activeProtoTab: "formatted",
+    };
     private schemas: ProtoSchemaFile[] = [];
     private globalSchema: Record<string, MessageDefinition> = {};
     private listeners: StoreListener[] = [];
@@ -83,7 +89,9 @@ export class Store {
     }
 
     updateSchema(id: string, updates: Partial<ProtoSchemaFile>) {
-        this.schemas = this.schemas.map((s) => (s.id === id ? { ...s, ...updates } : s));
+        this.schemas = this.schemas.map((s) =>
+            s.id === id ? { ...s, ...updates } : s
+        );
         this.rebuildGlobalSchema();
         this.saveSchemas();
         this.notifySchemaListeners();
@@ -120,7 +128,9 @@ export class Store {
     }
 
     private notify() {
-        this.listeners.forEach((listener) => listener({ traffic: this.traffic, ui: this.ui }));
+        this.listeners.forEach((listener) =>
+            listener({ traffic: this.traffic, ui: this.ui })
+        );
     }
 
     private notifySchemaListeners() {
@@ -128,18 +138,26 @@ export class Store {
     }
 
     private saveUiState() {
-        if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+        if (
+            typeof chrome !== "undefined" &&
+            chrome.storage &&
+            chrome.storage.local
+        ) {
             chrome.storage.local.set({ ui: this.ui });
         }
     }
 
     private loadUiState() {
-        if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
-            chrome.storage.local.get('ui', (result) => {
+        if (
+            typeof chrome !== "undefined" &&
+            chrome.storage &&
+            chrome.storage.local
+        ) {
+            chrome.storage.local.get("ui", (result) => {
                 if (result.ui) {
                     this.ui = { ...this.ui, ...result.ui };
                     // Ensure filter has a valid default if loading from old state
-                    if (!this.ui.filter) this.ui.filter = 'ALL';
+                    if (!this.ui.filter) this.ui.filter = "ALL";
                     this.notify();
                 }
             });
@@ -147,14 +165,22 @@ export class Store {
     }
 
     private saveSchemas() {
-        if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+        if (
+            typeof chrome !== "undefined" &&
+            chrome.storage &&
+            chrome.storage.local
+        ) {
             chrome.storage.local.set({ schemas: this.schemas });
         }
     }
 
     private loadSchemas() {
-        if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
-            chrome.storage.local.get('schemas', (result) => {
+        if (
+            typeof chrome !== "undefined" &&
+            chrome.storage &&
+            chrome.storage.local
+        ) {
+            chrome.storage.local.get("schemas", (result) => {
                 if (result.schemas && Array.isArray(result.schemas)) {
                     this.schemas = result.schemas;
                     this.rebuildGlobalSchema();
