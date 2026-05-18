@@ -59,6 +59,12 @@ export class ProtoDecoderSchema {
                         const subMessageDef = this.globalSchema[fieldDef.type];
                         const subDecoder = new ProtoDecoderSchema(data, subMessageDef, this.globalSchema);
                         const { result: subResult, score: subScore } = subDecoder.readMessage(data.length);
+                        
+                        Object.defineProperty(subResult, '__base64', {
+                            value: this.uint8ArrayToBase64(data),
+                            enumerable: false
+                        });
+
                         value = subResult;
                         score += subScore;
                     } else {
@@ -95,14 +101,27 @@ export class ProtoDecoderSchema {
 
     private tryFormatUuid(value: ProtoValue): ProtoValue {
         try {
-            // Case 1: Wrapped object { "1": "base64" } or { "value": "base64" }
+            // Case 1: Wrapped object { "1": "base64" } or { "value": "base64" } or parsed as message incorrectly
             if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+                // Check if the value itself has a raw __base64 property
+                const rawBase64 = (value as { __base64?: string }).__base64;
+                if (rawBase64) {
+                    const formatted = this.formatUuidString(rawBase64);
+                    if (formatted) return formatted;
+                }
+
                 const keys = Object.keys(value);
                 if (keys.length === 1 && (keys[0] === '1' || keys[0] === 'value')) {
                     const inner = (value as Record<string, unknown>)[keys[0]];
                     if (typeof inner === 'string') {
                         const formatted = this.formatUuidString(inner);
                         if (formatted) return formatted;
+                    } else if (typeof inner === 'object' && inner !== null) {
+                        const innerRaw = (inner as { __base64?: string }).__base64;
+                        if (innerRaw) {
+                            const formatted = this.formatUuidString(innerRaw);
+                            if (formatted) return formatted;
+                        }
                     }
                 }
             }
@@ -163,6 +182,8 @@ export class ProtoDecoderSchema {
             }
         }
 
+        const base64 = this.uint8ArrayToBase64(data);
+
         // Heuristic 2: Is it a nested message?
         try {
             // We use standard ProtoDecoder for nested messages as we don't have recursive schema context here easily
@@ -172,6 +193,10 @@ export class ProtoDecoderSchema {
             // We ignore subScore here as 'Nested' schema has no fields to match, so score will be 0 anyway unless we change that logic.
             // But since heuristics don't use a real schema, score will always be 0.
             if (Object.keys(message).length > 0) {
+                Object.defineProperty(message, '__base64', {
+                    value: base64,
+                    enumerable: false
+                });
                 return message;
             }
         } catch (e) {
@@ -179,7 +204,7 @@ export class ProtoDecoderSchema {
         }
 
         // Heuristic 3: Fallback to Base64
-        return this.uint8ArrayToBase64(data);
+        return base64;
     }
 
     private readVarint(): bigint {
