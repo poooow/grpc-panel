@@ -1,9 +1,21 @@
 import { MessageDefinition, parseProtoSchema } from "./utils/schemaParser";
+import { parsePbDescriptor } from "./utils/pbDescriptorParser";
 
 export interface ProtoSchemaFile {
     id: string;
     name: string;
     content: string;
+    createdAt: number;
+}
+
+/** A compiled .pb FileDescriptorSet stored as a base64-encoded binary */
+export interface PbDescriptorFile {
+    id: string;
+    name: string;
+    /** Base64-encoded raw .pb binary */
+    contentBase64: string;
+    /** Human-readable summary: list of top-level message names */
+    messageNames: string[];
     createdAt: number;
 }
 
@@ -29,13 +41,16 @@ export class Store {
         activeProtoTab: "formatted",
     };
     private schemas: ProtoSchemaFile[] = [];
+    private pbDescriptors: PbDescriptorFile[] = [];
     private globalSchema: Record<string, MessageDefinition> = {};
     private listeners: StoreListener[] = [];
     private schemaListeners: ((schemas: ProtoSchemaFile[]) => void)[] = [];
+    private pbDescriptorListeners: ((descriptors: PbDescriptorFile[]) => void)[] = [];
 
     constructor() {
         this.loadUiState();
         this.loadSchemas();
+        this.loadPbDescriptors();
     }
 
     getTraffic(): Traffic[] {
@@ -48,6 +63,10 @@ export class Store {
 
     getSchemaFiles(): ProtoSchemaFile[] {
         return this.schemas;
+    }
+
+    getPbDescriptors(): PbDescriptorFile[] {
+        return this.pbDescriptors;
     }
 
     getGlobalSchema(): Record<string, MessageDefinition> {
@@ -101,6 +120,20 @@ export class Store {
         this.notifySchemaListeners();
     }
 
+    addPbDescriptor(descriptor: PbDescriptorFile) {
+        this.pbDescriptors.push(descriptor);
+        this.rebuildGlobalSchema();
+        this.savePbDescriptors();
+        this.notifyPbDescriptorListeners();
+    }
+
+    removePbDescriptor(id: string) {
+        this.pbDescriptors = this.pbDescriptors.filter((d) => d.id !== id);
+        this.rebuildGlobalSchema();
+        this.savePbDescriptors();
+        this.notifyPbDescriptorListeners();
+    }
+
     subscribe(listener: StoreListener) {
         this.listeners.push(listener);
         // Initial call
@@ -119,11 +152,29 @@ export class Store {
         };
     }
 
+    subscribePbDescriptors(listener: (descriptors: PbDescriptorFile[]) => void) {
+        this.pbDescriptorListeners.push(listener);
+        // Initial call
+        listener(this.pbDescriptors);
+        return () => {
+            this.pbDescriptorListeners = this.pbDescriptorListeners.filter((l) => l !== listener);
+        };
+    }
+
     private rebuildGlobalSchema() {
         this.globalSchema = {};
         for (const schema of this.schemas) {
             const messages = parseProtoSchema(schema.content);
             this.globalSchema = { ...this.globalSchema, ...messages };
+        }
+        for (const pb of this.pbDescriptors) {
+            try {
+                const binary = Uint8Array.from(atob(pb.contentBase64), (c) => c.charCodeAt(0));
+                const messages = parsePbDescriptor(binary);
+                this.globalSchema = { ...this.globalSchema, ...messages };
+            } catch (e) {
+                console.warn('[grpc-panel] Failed to rebuild schema from .pb descriptor:', pb.name, e);
+            }
         }
     }
 
@@ -135,6 +186,10 @@ export class Store {
 
     private notifySchemaListeners() {
         this.schemaListeners.forEach((listener) => listener(this.schemas));
+    }
+
+    private notifyPbDescriptorListeners() {
+        this.pbDescriptorListeners.forEach((listener) => listener(this.pbDescriptors));
     }
 
     private saveUiState() {
@@ -185,6 +240,32 @@ export class Store {
                     this.schemas = result.schemas;
                     this.rebuildGlobalSchema();
                     this.notifySchemaListeners();
+                }
+            });
+        }
+    }
+
+    private savePbDescriptors() {
+        if (
+            typeof chrome !== "undefined" &&
+            chrome.storage &&
+            chrome.storage.local
+        ) {
+            chrome.storage.local.set({ pbDescriptors: this.pbDescriptors });
+        }
+    }
+
+    private loadPbDescriptors() {
+        if (
+            typeof chrome !== "undefined" &&
+            chrome.storage &&
+            chrome.storage.local
+        ) {
+            chrome.storage.local.get("pbDescriptors", (result) => {
+                if (result.pbDescriptors && Array.isArray(result.pbDescriptors)) {
+                    this.pbDescriptors = result.pbDescriptors;
+                    this.rebuildGlobalSchema();
+                    this.notifyPbDescriptorListeners();
                 }
             });
         }

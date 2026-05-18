@@ -337,3 +337,26 @@
         }
     }
 }
+
+// Binary descriptor (.pb) items
+.pb-descriptor-section {
+    margin-top: -8px; // tighten gap when both lists are shown
+}
+
+.pb-descriptor-item {
+    border-color: var(--color-gray-600);
+    background-color: var(--color-gray-200);
+
+    // Not clickable — no expand behaviour
+    .schema-header {
+        cursor: default;
+        &:hover {
+            background-color: transparent;
+        }
+    }
+}
+
+.pb-descriptor-icon {
+    color: var(--color-accent);
+    font-size: 12px;
+}

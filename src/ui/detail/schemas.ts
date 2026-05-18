@@ -1,5 +1,6 @@
-import { store, type ProtoSchemaFile } from '../../state';
+import { store, type ProtoSchemaFile, type PbDescriptorFile } from '../../state';
 import { validateProtoSchema } from '../../utils/protoValidator';
+import { parsePbDescriptor } from '../../utils/pbDescriptorParser';
 import { formatProto } from '../../utils/formatters/proto';
 import { formatBytes } from '../../utils/formatBytes';
 
@@ -13,24 +14,29 @@ export const renderSchemas = (): HTMLElement => {
     const container = document.createElement('div');
     container.className = 'schemas-container';
 
-    const renderContent = (schemas: ProtoSchemaFile[]) => {
+    const renderAll = () => {
         container.innerHTML = '';
 
-        // Upload section
+        // Upload section (handles both .proto and .pb)
         const uploadSection = createUploadSection();
         container.appendChild(uploadSection);
 
-        // Schema list
-        const listSection = createSchemaList(schemas);
+        // .proto schema list
+        const listSection = createSchemaList(store.getSchemaFiles());
         container.appendChild(listSection);
+
+        // .pb descriptor list
+        const pbSection = createPbDescriptorList(store.getPbDescriptors());
+        container.appendChild(pbSection);
 
         // Create new schema button
         const createBtn = createCreateButton();
         container.appendChild(createBtn);
     };
 
-    // Subscribe to schema updates
-    store.subscribeSchemas(renderContent);
+    // Subscribe to both schema and pb descriptor updates
+    store.subscribeSchemas(() => renderAll());
+    store.subscribePbDescriptors(() => renderAll());
 
     return container;
 };
@@ -43,12 +49,12 @@ const createUploadSection = (): HTMLElement => {
     dropZone.className = 'schema-drop-zone';
     dropZone.innerHTML = `
         <span class="drop-icon">📄</span>
-        <span class="drop-text">Drop .proto files here or click to upload</span>
+        <span class="drop-text">Drop <strong>.proto</strong> or <strong>.pb</strong> files here, or click to upload</span>
     `;
 
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
-    fileInput.accept = '.proto';
+    fileInput.accept = '.proto,.pb';
     fileInput.multiple = true;
     fileInput.style.display = 'none';
 
@@ -64,35 +70,75 @@ const createUploadSection = (): HTMLElement => {
         }, 5000);
     };
 
+    const handleProtoFile = (file: File) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const content = e.target?.result as string;
+            const validation = validateProtoSchema(content);
+
+            if (!validation.valid) {
+                showError(`${file.name}: ${validation.error}`);
+                return;
+            }
+
+            const schema: ProtoSchemaFile = {
+                id: `${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
+                name: file.name,
+                content: content,
+                createdAt: Date.now()
+            };
+
+            store.addSchema(schema);
+        };
+        reader.readAsText(file);
+    };
+
+    const handlePbFile = (file: File) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const arrayBuffer = e.target?.result as ArrayBuffer;
+            const bytes = new Uint8Array(arrayBuffer);
+
+            let messages: ReturnType<typeof parsePbDescriptor>;
+            try {
+                messages = parsePbDescriptor(bytes);
+            } catch (err) {
+                const msg = err instanceof Error ? err.message : String(err);
+                showError(`${file.name}: ${msg}`);
+                return;
+            }
+
+            // Encode binary as base64 for storage
+            let binary = '';
+            for (let i = 0; i < bytes.length; i++) {
+                binary += String.fromCharCode(bytes[i]);
+            }
+            const contentBase64 = btoa(binary);
+
+            const descriptor: PbDescriptorFile = {
+                id: `${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
+                name: file.name,
+                contentBase64,
+                messageNames: Object.keys(messages),
+                createdAt: Date.now()
+            };
+
+            store.addPbDescriptor(descriptor);
+        };
+        reader.readAsArrayBuffer(file);
+    };
+
     const handleFiles = (files: FileList | null) => {
         if (!files) return;
 
         Array.from(files).forEach(file => {
-            if (!file.name.endsWith('.proto')) {
-                showError(`${file.name}: Only .proto files are allowed`);
-                return;
+            if (file.name.endsWith('.proto')) {
+                handleProtoFile(file);
+            } else if (file.name.endsWith('.pb')) {
+                handlePbFile(file);
+            } else {
+                showError(`${file.name}: Only .proto and .pb files are supported`);
             }
-
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const content = e.target?.result as string;
-                const validation = validateProtoSchema(content);
-
-                if (!validation.valid) {
-                    showError(`${file.name}: ${validation.error}`);
-                    return;
-                }
-
-                const schema: ProtoSchemaFile = {
-                    id: `${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
-                    name: file.name,
-                    content: content,
-                    createdAt: Date.now()
-                };
-
-                store.addSchema(schema);
-            };
-            reader.readAsText(file);
         });
     };
 
@@ -361,4 +407,71 @@ const createCreateButton = (): HTMLElement => {
 
     container.appendChild(btn);
     return container;
+};
+
+const createPbDescriptorList = (descriptors: PbDescriptorFile[]): HTMLElement => {
+    const section = document.createElement('div');
+    section.className = 'schema-list-section pb-descriptor-section';
+
+    if (descriptors.length === 0) {
+        return section;
+    }
+
+    const listHeader = document.createElement('div');
+    listHeader.className = 'schema-list-header';
+    listHeader.textContent = `Binary Descriptors (.pb) (${descriptors.length})`;
+    section.appendChild(listHeader);
+
+    const list = document.createElement('ul');
+    list.className = 'schema-list';
+
+    descriptors
+        .sort((a, b) => a.name.localeCompare(b.name))
+        .forEach((descriptor) => {
+            const item = document.createElement('li');
+            item.className = 'schema-item pb-descriptor-item';
+
+            const header = document.createElement('div');
+            header.className = 'schema-header';
+
+            const icon = document.createElement('span');
+            icon.className = 'schema-expand-icon pb-descriptor-icon';
+            icon.textContent = '⬡';
+
+            const info = document.createElement('div');
+            info.className = 'schema-info';
+
+            const name = document.createElement('span');
+            name.className = 'schema-name';
+            name.textContent = descriptor.name;
+
+            const details = document.createElement('span');
+            details.className = 'schema-details';
+            const msgCount = descriptor.messageNames.length;
+            const preview = descriptor.messageNames.slice(0, 3).join(', ');
+            const suffix = msgCount > 3 ? ` +${msgCount - 3} more` : '';
+            details.textContent = `${msgCount} message${msgCount !== 1 ? 's' : ''}: ${preview}${suffix}`;
+            details.title = descriptor.messageNames.join('\n');
+
+            info.appendChild(name);
+            info.appendChild(details);
+
+            const deleteBtn = document.createElement('button');
+            deleteBtn.className = 'schema-delete-btn';
+            deleteBtn.textContent = '×';
+            deleteBtn.title = 'Remove descriptor';
+            deleteBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                store.removePbDescriptor(descriptor.id);
+            });
+
+            header.appendChild(icon);
+            header.appendChild(info);
+            header.appendChild(deleteBtn);
+            item.appendChild(header);
+            list.appendChild(item);
+        });
+
+    section.appendChild(list);
+    return section;
 };
