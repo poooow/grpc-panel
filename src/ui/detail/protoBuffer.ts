@@ -26,11 +26,16 @@ export const renderProtoBuffer = (traffic: Traffic): HTMLElement => {
 
   let formattedReq = formatBody(requestContent, contentTypeReq);
   let sectionTitle = "Request Body";
-  const formattedReqSchemas = formatGrpcSchema(
-    requestContent,
-    traffic.request.url,
-    "request"
-  );
+  let parsedBody: Record<string, unknown> | undefined;
+
+  // Handle JSON
+  if (contentTypeReq.includes("application/json") && requestContent) {
+    try {
+      parsedBody = JSON.parse(requestContent);
+    } catch(e) {
+        // ignore
+    }
+  }
 
   // Handle GET params if body is empty
   if (
@@ -38,6 +43,11 @@ export const renderProtoBuffer = (traffic: Traffic): HTMLElement => {
     traffic.request.queryString &&
     traffic.request.queryString.length > 0
   ) {
+    parsedBody = {};
+    traffic.request.queryString.forEach((q) => {
+      parsedBody![q.name] = q.value;
+    });
+
     // Construct query string for formatter
     requestContent = traffic.request.queryString
       .map((q) => `${q.name}=${encodeURIComponent(q.value)}`)
@@ -45,6 +55,13 @@ export const renderProtoBuffer = (traffic: Traffic): HTMLElement => {
     formattedReq = formatGet(requestContent);
     sectionTitle = "Request Parameters";
   }
+
+  const formattedReqSchemas = formatGrpcSchema(
+    requestContent,
+    traffic.request.url,
+    "request",
+    parsedBody
+  );
 
   // We render synchronously for request
   const isGrpc = isGrpcRequest(traffic);
@@ -77,11 +94,21 @@ export const renderProtoBuffer = (traffic: Traffic): HTMLElement => {
       }
     }
 
+    let parsedResBody: Record<string, unknown> | undefined;
+    if (contentTypeRes.includes("application/json") && responseContent) {
+        try {
+            parsedResBody = JSON.parse(responseContent);
+        } catch(e) {
+            // ignore
+        }
+    }
+
     const formattedRes = formatBody(responseContent, contentTypeRes);
     const formattedResSchemas = formatGrpcSchema(
       responseContent,
       traffic.request.url,
-      "response"
+      "response",
+      parsedResBody
     );
     responseContainer.appendChild(
       renderBodySection(

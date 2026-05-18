@@ -11,7 +11,8 @@ const SCORE_MESSAGE_WEIGHT = 8;
 export const formatGrpcSchema = (
   body: string,
   url: string,
-  trafficType: "request" | "response"
+  trafficType: "request" | "response",
+  parsedBody?: Record<string, unknown>
 ): {
   body: string;
   schema: string;
@@ -32,8 +33,26 @@ export const formatGrpcSchema = (
 
     for (const [messageName, messageDef] of Object.entries(globalSchema)) {
       try {
-        const { result: decoded, score: scoreFields } =
-          ProtoDecoderSchema.decode(buffer, messageDef, globalSchema);
+        let decoded: unknown;
+        let scoreFields = 0;
+
+        if (parsedBody) {
+          decoded = parsedBody;
+          for (const key of Object.keys(parsedBody)) {
+            const fieldExists = Object.values(messageDef.fields).some(
+              (f) => f.name === key || f.id.toString() === key
+            );
+            if (fieldExists) scoreFields++;
+          }
+        } else {
+          const { result, score } = ProtoDecoderSchema.decode(
+            buffer,
+            messageDef,
+            globalSchema
+          );
+          decoded = result;
+          scoreFields = score;
+        }
 
         // Score based on comparison of URL path and message name
         let scoreMessage = 0;
